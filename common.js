@@ -121,8 +121,22 @@
   }
 
   // ===== 화면 조각 (CSS) =====
+  // 화면 테마 (모든 페이지 공통)
+  (function () {
+    var st = {}; try { st = JSON.parse(localStorage.getItem("barofit") || "{}"); } catch (e) {}
+    var dark = st.theme === "dark" || (st.theme !== "light" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  })();
   var css = document.createElement("style");
   css.textContent =
+    "html[data-theme=dark]{--paper:#0E1014;--surface:#171A20;--ink:#F2F4F7;--ink-2:#A0A8B4;--hair:#2A2F38;color-scheme:dark}" +
+    "html[data-theme=dark] body{background:var(--paper);color:var(--ink)}" +
+    "html[data-theme=dark] .top{background:rgba(14,16,20,.86)!important}" +
+    "html[data-theme=dark] .tabbar{background:rgba(23,26,32,.94)!important;border-color:#2A2F38!important}" +
+    "html[data-theme=dark] .pt-pill,html[data-theme=dark] .gear{background:#171A20;color:#F2F4F7;box-shadow:inset 0 0 0 1px #2A2F38}" +
+    "html[data-theme=dark] .sheet{background:#171A20;color:#F2F4F7}" +
+    "html[data-theme=dark] .nav{background:#171A20!important;box-shadow:inset 0 0 0 1px #2A2F38!important}" +
+    "html[data-theme=dark] .nav a.on{background:#F2F4F7!important;color:#16181D!important}" +
     ".pt-pill{border:0;border-radius:999px;padding:9px 12px;font:inherit;font-size:13px;font-weight:800;background:#fff;color:#16181D;box-shadow:inset 0 0 0 1px #DCE1E7;white-space:nowrap;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px}" +
     ".pt-pill i{font-style:normal;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#FFC800;color:#16181D;font-size:11px;font-weight:900}" +
     "@media (max-width:720px){.pt-pill{margin-left:auto}}" +

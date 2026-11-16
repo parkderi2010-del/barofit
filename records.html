@@ -238,6 +238,13 @@
   .day.today span{color:var(--ink)}
   .streak{font-size:14px;color:var(--ink-2);margin-top:12px}
   .streak b{color:var(--ink)}
+  .cal{margin-top:16px}
+  .cal-title{font-size:14px;font-weight:800;margin-bottom:8px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}
+  .cal-h{font-size:12px;font-weight:700;color:var(--ink-2)}
+  .cal-d{display:grid;place-items:center;aspect-ratio:1;border-radius:50%;font-size:13px;font-weight:700;color:var(--ink-2);background:var(--paper)}
+  .cal-d.on{background:var(--level,#3557F5);color:#fff}
+  .cal-d.today{box-shadow:inset 0 0 0 2px var(--ink)}
   .list{list-style:none;margin:0;padding:0;display:grid;gap:10px}
   .list li{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:12px;border-radius:12px;background:var(--paper)}
   .list li b{font-size:15px}
@@ -440,6 +447,7 @@
       <div class="panel-head"><h2>최근 7일 운동 시간</h2></div>
       <div class="week" id="week"></div>
       <div class="streak" id="streak"></div>
+      <div class="cal" id="cal"></div>
     </section>
 
     <section class="panel">
@@ -453,7 +461,7 @@
     </section>
 
     <section class="panel">
-      <div class="panel-head"><h2>공유와 백업</h2></div>
+      <div class="panel-head" id="backup"><h2>공유와 백업</h2></div>
       <div class="actions" style="margin-top:0">
         <button class="btn btn-primary" id="shareBtn" type="button">오늘 기록 자랑하기</button>
         <button class="btn" id="exportBtn" type="button">기록 내보내기</button>
@@ -642,6 +650,15 @@ function render(log, isDemo) {
   $("week").innerHTML = bars.map(b => `<div class="day${b.label === "오늘" ? " today" : ""}" title="${Math.round(b.m)}분"><div class="bar${b.m ? "" : " zero"}" style="height:${Math.max(4, b.m / maxM * 90)}px"></div><span>${b.label}</span></div>`).join("");
   const weekMin = Math.round(bars.reduce((a, b) => a + b.m, 0)), weekDays = bars.filter(b => b.m).length;
   $("streak").innerHTML = `이번 주 <b>${weekDays}일, ${weekMin}분</b> 운동했어요.` + (streak ? ` 지금 <b>${streak}일 연속</b>이에요.` : "");
+  // 이번 달 달력
+  (() => {
+    const now = new Date(), y = now.getFullYear(), mo = now.getMonth(), first = new Date(y, mo, 1), last = new Date(y, mo + 1, 0).getDate();
+    const done = new Set(W.map(e => e.date)), lead = (first.getDay() + 6) % 7; let html = `<div class="cal-title">${mo + 1}월 운동 달력 · ${[...done].filter(d => d.startsWith(`${y}-${String(mo + 1).padStart(2, "0")}`)).length}일</div><div class="cal-grid">`;
+    ["월", "화", "수", "목", "금", "토", "일"].forEach(n => html += `<span class="cal-h">${n}</span>`);
+    for (let i = 0; i < lead; i++) html += "<span></span>";
+    for (let d = 1; d <= last; d++) { const k = `${y}-${String(mo + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`; html += `<span class="cal-d${done.has(k) ? " on" : ""}${d === now.getDate() ? " today" : ""}">${d}</span>`; }
+    $("cal").innerHTML = html + "</div>";
+  })();
 
   // 최근 운동
   const recent = W.slice().sort((a, b) => b.start - a.start).slice(0, 8);
@@ -761,11 +778,12 @@ $("shareBtn").addEventListener("click", async () => {
 });
 
 // ===== 백업 / 복원 =====
-const KEYS = ["barofit", "barofit-log", "barofit-points", "barofit-badges", "barofit-level", "barofit-myroutines"];
+const KEYS = ["barofit", "barofit-log", "barofit-points", "barofit-badges", "barofit-level", "barofit-myroutines", "barofit-profile", "barofit-weights", "barofit-tune", "barofit-ref", "barofit-body"];
 $("exportBtn").addEventListener("click", () => {
   const data = { app: "barofit", version: 1, savedAt: new Date().toISOString() };
   KEYS.forEach(k => { try { data[k] = JSON.parse(localStorage.getItem(k)); } catch (e) { data[k] = null; } });
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: "application/json" }));
+  try { const ui = JSON.parse(localStorage.getItem("barofit-ui") || "{}"); ui.lastBackup = Date.now(); localStorage.setItem("barofit-ui", JSON.stringify(ui)); } catch (er) {}
   a.download = `바로핏-기록-${today}.json`; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 });
 $("importBtn").addEventListener("click", () => $("importFile").click());

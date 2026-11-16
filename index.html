@@ -128,7 +128,70 @@
   .gear svg{width:20px;height:20px}
   .demo-skip{display:none;position:absolute;top:12px;right:12px;z-index:4;height:38px;padding:0 16px;border:0;border-radius:999px;background:rgba(255,255,255,.92);color:#16181D;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
   .cam.demo-on .demo-skip{display:block}
-  .cam:not(.live) .hud-count{display:none} /* 카메라 켜기 전엔 숫자를 숨겨 안내 문구와 겹치지 않게 */
+  .cam:not(.live) .hud-count{display:none}
+  /* 무게 */
+  .kg-card{margin-top:12px;padding:12px 14px;border-radius:18px;background:var(--surface)}
+  .kg-card[hidden]{display:none}
+  .kg-row{display:flex;align-items:center;gap:8px}
+  .kg-label{font-size:14px;font-weight:800;color:var(--ink-2);margin-right:2px}
+  .kg-btn{width:40px;height:40px;border:0;border-radius:12px;background:var(--paper);color:var(--ink);font-size:22px;font-weight:700;cursor:pointer}
+  #kgOut{min-width:74px;text-align:center;font-size:20px;font-weight:900}
+  .kg-use{margin-left:auto;border:0;border-radius:999px;padding:8px 12px;background:#E6ECFF;color:#2443D6;font:inherit;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap}
+  .kg-why{margin:6px 0 0;font-size:12.5px;color:var(--ink-2);line-height:1.5}
+  /* 이번 주 */
+  .week-card{padding:16px 18px}
+  .wk-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}
+  .wk-head b{font-size:16px} .wk-head span{font-size:13px;font-weight:700;color:var(--ink-2)}
+  .wk-days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}
+  .wk-d{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--ink-2)}
+  .wk-d i{width:30px;height:30px;border-radius:50%;background:var(--paper);display:grid;place-items:center;font-style:normal;font-size:14px;color:transparent}
+  .wk-d.done i{background:var(--level);color:#fff}
+  .wk-d.today i{box-shadow:0 0 0 2px var(--ink) inset}
+  .wk-d.done.today i{box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--level)}
+  .nudge{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:12px 14px;border-radius:16px;background:#FFF4D6;color:#5C4400;font-size:13.5px;font-weight:700}
+  .nudge[hidden]{display:none}
+  .nudge a{color:inherit;text-decoration:none;flex:1}
+  .nudge button{border:0;background:none;font-size:20px;color:inherit;cursor:pointer}
+  /* 판정 피드백 */
+  .judge{margin-top:16px;padding:14px;border-radius:16px;background:var(--paper)}
+  .judge b{display:block;font-size:15px;margin-bottom:10px}
+  .judge-row{display:flex;gap:8px;flex-wrap:wrap}
+  .jbtn{border:0;border-radius:12px;padding:10px 14px;font:inherit;font-size:14px;font-weight:700;background:var(--surface);color:var(--ink);cursor:pointer}
+  .jbtn.on{background:var(--ink);color:#fff}
+  .jex{margin-top:12px} .jex > span{display:block;font-size:13px;font-weight:800;color:var(--ink-2);margin-bottom:6px}
+  .judge p{margin:10px 0 0;font-size:13px;color:var(--ink-2);line-height:1.5}
+  /* 쉬는 시간 미니 리포트 */
+  .hud-rest small{display:block;margin-top:6px;font-size:clamp(15px,2.6vw,22px);font-weight:700;opacity:.9}
+  /* 내 정보, 온보딩 */
+  .me-row{display:flex;align-items:center;gap:10px;font-size:14.5px;font-weight:700}
+  .me-row span{flex:1}
+  .ob-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 4px}
+  .ob-num{display:flex;align-items:center;gap:6px;padding:10px 12px;border-radius:14px;background:var(--paper);font-size:14px;font-weight:700}
+  .ob-num span{color:var(--ink-2)} .ob-num em{font-style:normal;color:var(--ink-2)}
+  .ob-num input{flex:1;min-width:0;width:100%;border:0;background:transparent;font:inherit;font-size:20px;font-weight:900;color:var(--ink);text-align:right;outline:none}
+  .ob-go{width:100%;margin-top:10px}
+  .ob-err{min-height:18px;margin:10px 0 0;font-size:13px;font-weight:700;color:var(--bad)}
+  #onboard .field-label{margin-top:14px}
+  /* 크게 보기 */
+  .cam.big .hud-count b{font-size:clamp(120px,32vw,320px)}
+  .cam.big .cap-main{font-size:clamp(24px,5vw,42px)}
+  .cam.big .cap-sub,.cam.big .cap-why{font-size:clamp(16px,2.8vw,24px)}
+  /* 가로 화면 */
+  @media (orientation:landscape) and (max-height:560px){
+    .top{padding-top:6px;padding-bottom:6px}
+    .app{grid-template-columns:minmax(0,1.5fr) minmax(280px,1fr)!important;align-items:start}
+    .app > section:first-child{position:sticky;top:60px}
+    .cam{aspect-ratio:auto;height:calc(100vh - 140px)}
+    .tabbar{display:none!important}
+  }
+  @media (orientation:landscape) and (min-width:960px){ .app > section:first-child{position:sticky;top:84px} }
+  /* 어두운 화면 (이 페이지 전용 보정) */
+  html[data-theme="dark"] .ref-box,html[data-theme="dark"] .rd-list li::before,html[data-theme="dark"] .voice-sel,html[data-theme="dark"] .ssheet-x{background:var(--paper);color:var(--ink)}
+  html[data-theme="dark"] .rcard-new{box-shadow:inset 0 0 0 2px #2A2F38}
+  html[data-theme="dark"] .gtab{box-shadow:inset 0 0 0 1.5px #2A2F38}
+  html[data-theme="dark"] .rcard.on,html[data-theme="dark"] .gtab.on,html[data-theme="dark"] .jbtn.on{background:#F2F4F7;color:#16181D}
+  html[data-theme="dark"] .nudge{background:#3A3010;color:#FFE7A3}
+  html[data-theme="dark"] .kg-use{background:#22305E;color:#C9D6FF} /* 카메라 켜기 전엔 숫자를 숨겨 안내 문구와 겹치지 않게 */
   /* 설정 시트 */
   .sbg{position:fixed;inset:0;z-index:60;background:rgba(16,18,24,0);display:flex;align-items:flex-end;justify-content:center;transition:background .22s}
   .sbg[hidden]{display:none}
@@ -515,7 +578,13 @@
       <button class="btn btn-primary" id="camBtn">카메라 켜기</button>
       <button class="btn btn-primary" id="goBtn" hidden>운동 시작</button>
       <button class="btn" id="skipDemo" hidden>시범 건너뛰기</button>
+      <button class="btn" id="restAdd" hidden>+15초</button>
+      <button class="btn" id="restSkip" hidden>쉬는 시간 건너뛰기</button>
       <button class="btn" id="endBtn" hidden>끝내고 리포트 보기</button>
+    </div>
+    <div class="kg-card" id="kgCard" hidden>
+      <div class="kg-row"><span class="kg-label">무게</span><button class="kg-btn" data-kg="-1" type="button" aria-label="무게 줄이기">−</button><output id="kgOut">0kg</output><button class="kg-btn" data-kg="1" type="button" aria-label="무게 늘리기">+</button><button class="kg-use" id="kgUse" type="button"></button></div>
+      <p class="kg-why" id="kgWhy"></p>
     </div>
     <div class="error" id="errorBox" role="alert"></div>
     <p class="privacy">
@@ -525,6 +594,8 @@
   </section>
 
   <aside>
+    <div class="nudge" id="nudge" hidden><a href="records.html#backup">기록이 이 기기에만 저장돼 있어요. 백업해 두세요 ›</a><button type="button" id="nudgeX" aria-label="닫기">×</button></div>
+    <section class="panel week-card" id="weekCard"></section>
     <section class="panel" id="report" hidden>
       <div class="report">
         <div class="report-avatar" id="reportAvatar"></div>
@@ -554,6 +625,8 @@
      <div class="ssheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
       <div class="ssheet-head"><span class="ssheet-grip" aria-hidden="true"></span><h2 id="sheetTitle">설정</h2><button class="ssheet-x" id="sheetClose" type="button" aria-label="닫기">×</button></div>
       <div class="settings">
+        <div class="set-sec">내 정보</div>
+        <div class="me-row"><span id="meText">아직 입력하지 않았어요</span><button class="btn" id="meEdit" type="button">수정</button></div>
         <div class="set-sec">코치와 소리</div>
         <div>
           <div class="field-label">알림 방식</div>
@@ -592,6 +665,20 @@
           <div class="seg" data-key="useRef"><button data-val="on">켜기</button><button data-val="off">끄기</button></div>
           <div class="field-note">모범 동작을 등록한 운동은 매 회 일치도를 알려줘요.</div>
         </div>
+        <div>
+          <div class="field-label">판정 보정</div>
+          <div class="field-note" id="tuneNote" style="margin-top:0">운동 리포트에서 “판정이 틀렸어요”를 누르면 그 운동의 기준을 내 몸에 맞게 조정해요.</div>
+          <div class="voice-row" style="margin-top:8px"><button class="btn" id="diagExport" type="button" style="flex:1">판정 데이터 내보내기</button><button class="btn btn-quiet" id="tuneReset" type="button">보정 초기화</button></div>
+        </div>
+        <div class="set-sec">화면</div>
+        <div>
+          <div class="field-label">화면 테마</div>
+          <div class="seg" data-key="theme"><button data-val="auto">기기 설정 따라</button><button data-val="light">밝게</button><button data-val="dark">어둡게</button></div>
+        </div>
+        <div>
+          <div class="field-label">숫자·자막 크기</div>
+          <div class="seg" data-key="bigtext"><button data-val="off">보통</button><button data-val="on">크게 (멀리서 볼 때)</button></div>
+        </div>
         <div class="set-sec">안전 안내</div>
         <p class="field-note" style="margin-top:0">휴대폰 카메라 한 대로 판단하기 때문에, 기구에 몸이 가려지거나 너무 빠른 동작은 정확하지 않을 수 있어요. 무거운 무게를 들 때는 자세 알림을 참고만 하시고, 통증이 있으면 바로 멈추세요.</p>
       </div>
@@ -599,6 +686,28 @@
     </div>
   </aside>
 </main>
+
+<div class="sbg" id="onboard" hidden>
+ <div class="ssheet" role="dialog" aria-modal="true" aria-labelledby="obTitle">
+  <div class="ssheet-head"><span class="ssheet-grip" aria-hidden="true"></span><h2 id="obTitle">반가워요! 몇 가지만 알려주세요</h2></div>
+  <p class="field-note" style="margin-top:0">키·몸무게·성별은 자세 판정 기준, 추천 무게, 소모 칼로리를 내 몸에 맞추는 데만 쓰고 이 기기 밖으로 보내지 않아요.</p>
+  <div class="ob-grid">
+    <label class="ob-num"><span>키</span><input id="obH" type="number" inputmode="decimal" min="120" max="220" placeholder="170"><em>cm</em></label>
+    <label class="ob-num"><span>몸무게</span><input id="obW" type="number" inputmode="decimal" min="30" max="200" placeholder="65"><em>kg</em></label>
+  </div>
+  <div class="field-label">성별</div>
+  <div class="seg" data-ob="sex"><button data-val="m" type="button">남성</button><button data-val="f" type="button">여성</button><button data-val="x" type="button">선택 안 함</button></div>
+  <div class="field-label">운동 경험</div>
+  <div class="seg" data-ob="level"><button data-val="beg" type="button">처음이에요</button><button data-val="mid" type="button">1년 미만</button><button data-val="adv" type="button">1년 이상</button></div>
+  <div class="field-label">목표</div>
+  <div class="seg" data-ob="goal"><button data-val="hyper" type="button">근육</button><button data-val="strength" type="button">힘</button><button data-val="fat" type="button">다이어트</button><button data-val="endure" type="button">체력</button></div>
+  <div class="field-label">코치 스타일</div>
+  <div class="seg" data-ob="coach"><button data-val="kind" type="button">친절한 코치</button><button data-val="drill" type="button">조교 (빡세게)</button></div>
+  <p class="ob-err" id="obErr"></p>
+  <button class="btn btn-primary ob-go" id="obGo" type="button">시작하기</button>
+  <button class="btn btn-quiet ob-go" id="obSkip" type="button">나중에 할게요</button>
+ </div>
+</div>
 
 <div class="halmae" id="halmae" role="dialog" aria-live="assertive" aria-label="할매 알림">
   <div class="h-stage" id="hStage"></div>
@@ -644,8 +753,8 @@ const MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmark
 
 // ===== 설정 (앉은 자세 화면과 같은 저장 공간을 써서 사투리·알림 방식이 이어짐) =====
 // 스쿼트 상체 숙임 허용치: 바르게 앉아도 상체는 35~50° 기울어지는 게 정상
-const squatLeanMax = () => ({ easy: 68, normal: 60, hard: 52 }[settings.strict] || 60);
-const DEFAULTS = { persona: "coach", mode: "voice", dialect: "gs", strict: "normal", exercise: "squat", reps: 10, sets: 3, rest: 60, holdSec: 30, wmode: "routine", routineId: "begin", useRef: "on", vtone: "normal", voiceName: "", vspeed: "1", coach: "kind", demo: "on" };
+const squatLeanMax = () => ({ easy: 68, normal: 60, hard: 52 }[settings.strict] || 60) + heightAdj() + (tuneFor("squat").lean || 0);
+const DEFAULTS = { persona: "coach", mode: "voice", dialect: "gs", strict: "normal", exercise: "squat", reps: 10, sets: 3, rest: 60, holdSec: 30, wmode: "routine", routineId: "begin", useRef: "on", vtone: "normal", voiceName: "", vspeed: "1", coach: "kind", demo: "on", theme: "auto", bigtext: "off" };
 let settings = { ...DEFAULTS };
 try { Object.assign(settings, JSON.parse(localStorage.getItem("barofit") || "{}")); } catch (e) {}
 const saveSettings = () => {
@@ -1010,8 +1119,9 @@ function closeExercise() {
   const sets = log.filter(l => l.good + l.bad + l.partial > 0 || l.hold > 0.5)
     .map(l => ({ good: l.good, bad: l.bad, partial: l.partial, hold: Math.round(l.hold || 0), errors: l.errors,
       score: l.scores && l.scores.length ? Math.round(l.scores.reduce((a, b) => a + b, 0) / l.scores.length) : null,
-      ref: l.refScores && l.refScores.length ? Math.round(l.refScores.reduce((a, b) => a + b, 0) / l.refScores.length) : null }));
-  if (session && sets.length) session.items.push({ ex: ex.id, name: ex.name, group: ex.group, hold: !!ex.hold, target: tgt(), sets });
+      ref: l.refScores && l.refScores.length ? Math.round(l.refScores.reduce((a, b) => a + b, 0) / l.refScores.length) : null, kg: l.kg ?? null }));
+  if (session && sets.length) { session.items.push({ ex: ex.id, name: ex.name, group: ex.group, hold: !!ex.hold, target: tgt(), sets }); saveKgHistory(ex, sets, tgt()); }
+  flushDiag();
   log = [];
 }
 function closeSession() {
@@ -1469,7 +1579,7 @@ function visibleEnough(lm) {
 }
 // 판정 기준에 따라 "1회 인정" 각도를 조금 너그럽게/엄격하게
 function deepFor(e) {
-  const adj = { easy: 12, normal: 0, hard: -6 }[settings.strict] || 0;
+  const adj = ({ easy: 12, normal: 0, hard: -6 }[settings.strict] || 0) + (tuneFor(e.id).depth || 0);
   return e.dir === "down" ? e.deep + adj : e.deep - adj;
 }
 
@@ -1624,6 +1734,7 @@ function updateRep(m, now) {
     const lg = curLog();
     if (!r.reached) {
       lg.partial++; lg.errors[e.partial] = (lg.errors[e.partial] || 0) + 1; goodStreak = 0; partialRun++;
+      pushDiag({ ex: e.id, ok: 0, best: Math.round((r.best || 0) * 100), lo: Math.round(r.min[e.metric]), hi: Math.round(r.max[e.metric]), lean: Math.round(r.max.lean) });
       const P = PHASE[e.id] || { a: "움직이기" }, got = Math.max(0, Math.min(99, Math.round((r.best || 0) * 100)));
       let t = `안 셌어요 · 목표의 ${got}%까지만 갔어요. ${P.a}를 조금 더 크게!`;
       if (partialRun >= 2 && camView === "front") t += " · 정면은 각도가 덜 잡혀요. 대각선 45°에서 찍거나 판정 기준을 ‘너그럽게’로";
@@ -1633,7 +1744,8 @@ function updateRep(m, now) {
       if (settings.mode === "voice") sayQueued(isDrill() ? `그건 안 센다! ${ERR_SAY_DRILL[e.partial] || "더 크게!"}` : `안 셌어요. ${ERR_SAY[e.partial] || "조금 더 크게"}`, 1.1); else if (settings.mode === "beep") beep(660, 0.2, 2);
       return;
     }
-    repCount++; partialRun = 0;
+    repCount++; partialRun = 0; if (usesKg(e)) lg.kg = curKg;
+    pushDiag({ ex: e.id, ok: 1, best: Math.round((r.best || 0) * 100), lo: Math.round(r.min[e.metric]), hi: Math.round(r.max[e.metric]), lean: Math.round(r.max.lean) });
     const errs = e.rules.filter(rule => rule.when(r)).map(rule => rule.err);
     if (forced) errs.push(e.dir === "down" ? "noLockout" : "range");
     const dur = (now - r.t0) / 1000, sf = { easy: 0.75, normal: 1, hard: 1.2 }[settings.strict] || 1;
@@ -1643,7 +1755,7 @@ function updateRep(m, now) {
     if (minSec && down != null && down < 0.3 * sf) errs.push("fastDown");
     else if (minSec && dur < minSec * sf) errs.push("tooFast");
     // 끝까지 폈는지 (매 회 시작 전 가장 많이 편 각도)
-    if (e.lock && r.preTop != null && r.preTop > -1e8 && r.preTop < e.lock.min + ({ easy: -8, normal: 0, hard: 3 }[settings.strict] || 0)) errs.push("noLockout");
+    if (e.lock && r.preTop != null && r.preTop > -1e8 && r.preTop < e.lock.min + ({ easy: -8, normal: 0, hard: 3 }[settings.strict] || 0) - (tuneFor(e.id).lock || 0)) errs.push("noLockout");
     // 고개 떨굼, 다리 쏠림, 몸통 흔들림
     if (e.neck && r.max.neck > ({ easy: 62, normal: 55, hard: 48 }[settings.strict] || 55)) errs.push("head");
     if (e.legSym && r.max.kneeDiff > ({ easy: 30, normal: 22, hard: 16 }[settings.strict] || 22)) errs.push("unevenLeg");
@@ -1653,6 +1765,8 @@ function updateRep(m, now) {
     if (cmp) { lg.refScores.push(cmp.score); if (cmp.cue && !errs.length) errs.push(cmp.cue); }
     const rank = k => { const i = ERR_ORDER.indexOf(k); return i < 0 ? 99 : i; };
     errs.sort((a, b) => rank(a) - rank(b));
+    for (let i = errs.length - 1; i >= 0; i--) if (tuneOff(e.id, errs[i])) errs.splice(i, 1); // 사용자가 "틀린 지적"이라고 한 건 빼기
+    if (errs.length) pushDiag({ ex: e.id, errs: errs.slice() });
     let score = Math.max(0, 100 - 22 * errs.length); if (cmp) score = Math.round((score + cmp.score) / 2);
     lg.scores.push(score);
     noteWhy(errs.length ? `${repCount}회 인정! 다음엔 ${ERR_KO[errs[0]] || "자세"} 주의` : `${repCount}회 인정! 좋은 자세예요`, errs.length ? "tip" : "ok", 1600);
@@ -1729,33 +1843,38 @@ function beginSet() {
   else if (isDrill()) setTimeout(() => cheer("start", 1500), 300);
 }
 const restOf = it => (it && it.rest) || (routine && routine.rest) || settings.rest;
-function startRest(label, onEnd, sec) {
+function startRest(label, onEnd, sec, summary = "") {
   phase = "rest"; let left = sec != null ? sec : settings.rest;
+  const draw = () => bigText(`<div class="hud-rest">${label}<b>${left}</b>${summary ? `<small>${summary}</small>` : ""}</div>`);
   const tick = () => {
-    if (phase !== "rest") return;
-    if (left <= 0) { hideBig(); onEnd(); return; }
-    bigText(`<div class="hud-rest">${label}<b>${left}</b></div>`);
+    if (phase !== "rest") { restUI(false); return; }
+    if (left <= 0) { hideBig(); restUI(false); onEnd(); return; }
+    draw();
     if (left === 10 && settings.mode !== "screen") beep(523, 0.2, 2);
     left--; restTimer = setTimeout(tick, 1000);
   };
+  restCtl = { add: n => { left += n; draw(); }, skip: () => { clearTimeout(restTimer); left = 0; tick(); } };
+  restUI(true);
   restTimer = setTimeout(tick, 2400);
 }
 function finishSet() {
   if (phase !== "active") return;
   if (setNo >= tgt().sets) { finishExercise(); return; }
   phase = "rest"; cheer("setDone", 2400);
-  startRest("쉬는 시간", () => { setNo++; renderHud(); cheer("restEnd", 1500); setTimeout(() => startCountdown(beginSet), 1600); }, routine ? restOf(routine.items[routine.idx]) : settings.rest);
+  const sum = setSummary(curLog());
+  startRest("쉬는 시간", () => { setNo++; renderHud(); cheer("restEnd", 1500); setTimeout(() => startCountdown(beginSet), 1600); }, routine ? restOf(routine.items[routine.idx]) : settings.rest, sum);
 }
 const NEXT_LINE = { gs: n => `다음은 ${n}! 카메라 위치 맞차라!`, jl: n => `다음은 ${n}이여! 카메라 위치 맞춰야!`, sd: n => `다음은 ${n}! 카메라 위치 맞춰라!` };
 function finishExercise() {
   if (routine && routine.idx < routine.items.length - 1) {
-    const prevRest = restOf(routine.items[routine.idx]);
+    const prevRest = restOf(routine.items[routine.idx]), sum = setSummary(curLog());
     closeExercise(); routine.idx++; ex = exById(routine.items[routine.idx].ex); setNo = 1; sm = null; rep = null;
     phase = "rest"; renderPicker(); renderHud();
     const t = isCoach() ? `다음은 ${ex.name}이에요. 카메라 위치를 확인해 주세요.` : (NEXT_LINE[settings.dialect] || NEXT_LINE.gs)(ex.name);
     showHalmae(t, { mood: "happy", ms: 2400 }); if (settings.mode === "voice") speakHalmae(t);
     setTimeout(() => showToast(ex.view), 2500);
-    startRest(`다음 운동: ${ex.name}`, () => withDemo(() => startCountdown(beginSet)), Math.max(prevRest, 45));
+    renderKg();
+    startRest(`다음 운동: ${ex.name}`, () => withDemo(() => startCountdown(beginSet)), Math.max(prevRest, 45), sum);
     return;
   }
   phase = "done"; cheer("allDone", 3000); setBadge("운동 끝");
@@ -1891,6 +2010,12 @@ function renderFeedback(s) {
   return fb;
 }
 
+// 소모 칼로리: 운동 종류별 MET × 몸무게 × 시간 (쉬는 시간 포함이라 0.8배)
+function sessionKcal(s) {
+  const MET = { compound: 5.5, isolation: 3.5, core: 3.8, cardio: 8 }, bw = +profile().weight || 65;
+  const mets = s.items.map(it => MET[(META[it.ex] || {}).type] || 4.5), met = mets.reduce((a, b) => a + b, 0) / (mets.length || 1);
+  return Math.round(met * 0.8 * bw * (s.durationSec || 0) / 3600);
+}
 function showReport(s) {
   if (!s) return;
   let good = 0, bad = 0, part = 0, sets = 0, holdRatio = [], errs = {}, scs = [], refsc = [];
@@ -1918,12 +2043,14 @@ function showReport(s) {
     `<li><span>운동한 부위</span><b>${groups.join(", ")}</b></li>` +
     (scs.length ? `<li><span>평균 동작 점수</span><b>${Math.round(scs.reduce((a, b) => a + b, 0) / scs.length)}점</b></li>` : "") +
     (refsc.length ? `<li><span>모범 동작 일치도</span><b>${Math.round(refsc.reduce((a, b) => a + b, 0) / refsc.length)}%</b></li>` : "") +
-    `<li><span>가장 많이 한 실수</span><b>${top ? ERR_KO[top] : "없음"}</b></li>`;
+    `<li><span>가장 많이 한 실수</span><b>${top ? ERR_KO[top] : "없음"}</b></li>` +
+    `<li><span>소모 칼로리</span><b>약 ${sessionKcal(s)}kcal${profile().weight ? "" : " *"}</b></li>` +
+    s.items.filter(it => usesKg(exById(it.ex))).map(it => `<li><span>다음 ${it.name}</span><b>${kgText(kgAdvice(exById(it.ex)).kg)} 추천</b></li>`).join("");
   $("reportSets").innerHTML = s.items.map(it => it.hold
     ? `<span>${it.name} ${it.sets.length}세트, 최고 ${Math.max(...it.sets.map(x => x.hold))}초</span>`
-    : `<span>${it.name} ${it.sets.length}세트, ${it.sets.reduce((a, x) => a + x.good + x.bad, 0)}회</span>`).join("");
+    : `<span>${it.name} ${it.sets.length}세트, ${it.sets.reduce((a, x) => a + x.good + x.bad, 0)}회${it.sets.some(x => x.kg) ? ` · ${kgText(Math.max(...it.sets.map(x => x.kg || 0)))}` : ""}</span>`).join("") + judgeHTML(s);
   renderFeedback(s);
-  $("report").hidden = false; $("report").scrollIntoView({ behavior: "smooth", block: "start" });
+  $("report").hidden = false; renderWeek(); $("report").scrollIntoView({ behavior: "smooth", block: "start" });
   $("goBtn").hidden = true; $("endBtn").hidden = true;
 }
 
@@ -1963,7 +2090,7 @@ function liveErrors(m, now) {
   for (const k in liveCnt) if (!out.has(k)) liveCnt[k] = 0;
   const res = []; for (const k in liveBad) if (now - liveBad[k] < 450) res.push(k);
   const rank = k => { const i = ERR_ORDER.indexOf(k); return i < 0 ? 99 : i; };
-  return res.sort((a, b) => rank(a) - rank(b));
+  return res.filter(k => !tuneOff(e.id, k)).sort((a, b) => rank(a) - rank(b));
 }
 // 가이드 선이 지금 가리키는 목표 각도 (초보자용 템포: 버티는 쪽 2초, 힘쓰는 쪽 1초)
 function ghostTheta(e, dt, run) {
@@ -2261,6 +2388,7 @@ function renderPicker() {
   $("restOut").textContent = `${settings.rest}초`;
   renderHud();
   renderRoutines();
+  try { renderKg(); } catch (e) {} // 처음 불릴 때는 아직 준비 전일 수 있음 (아래에서 다시 그림)
 }
 $("guide").addEventListener("click", e => {
   if (e.target.closest("#refRec")) { startRecording(); return; }
@@ -2307,7 +2435,8 @@ $("sheetClose").addEventListener("click", closeSettings);
 $("settingsSheet").addEventListener("click", e => { if (e.target.id === "settingsSheet") closeSettings(); });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("settingsSheet").hidden) closeSettings(); });
 document.querySelector('.seg[data-key="vtone"]').addEventListener("click", e => { if (e.target.closest("button")) tryVoice(); });
-bindSeg("vspeed"); bindSeg("coach"); bindSeg("demo");
+bindSeg("vspeed"); bindSeg("coach"); bindSeg("demo"); bindSeg("theme"); bindSeg("bigtext");
+document.querySelectorAll('.seg[data-key="theme"], .seg[data-key="bigtext"]').forEach(w => w.addEventListener("click", () => setTimeout(applyDisplay, 0)));
 document.querySelector('.seg[data-key="coach"]').addEventListener("click", e => { if (e.target.closest("button")) tryVoice(); });
 document.querySelector('.seg[data-key="vspeed"]').addEventListener("click", e => { if (e.target.closest("button")) tryVoice(); }); bindSeg("strict"); bindSeg("wmode"); bindSeg("useRef");
 document.querySelector('.seg[data-key="wmode"]').addEventListener("click", () => { if (phase === "idle" || phase === "done") renderPicker(); });
@@ -2519,6 +2648,211 @@ function finishDemo() {
 $("skipDemo").addEventListener("click", () => { try { speechSynthesis.cancel(); } catch (x) {} finishDemo(); });
 $("demoSkipCam").addEventListener("click", () => { try { speechSynthesis.cancel(); } catch (x) {} finishDemo(); });
 
+
+// ===================== 내 정보 (키·몸무게·성별) =====================
+const PROF_KEY = "barofit-profile";
+const profile = () => { try { return JSON.parse(localStorage.getItem(PROF_KEY) || "{}"); } catch (e) { return {}; } };
+function saveProfile(p) { try { localStorage.setItem(PROF_KEY, JSON.stringify(p)); } catch (e) {} }
+// 다리가 긴(키가 큰) 사람은 바르게 앉아도 상체가 더 숙여지는 게 정상 → 스쿼트 숙임 허용치 보정
+function heightAdj() { const h = +profile().height || 0; return h >= 185 ? 5 : h >= 178 ? 3 : h && h <= 158 ? -2 : 0; }
+function meText() {
+  const p = profile(); if (!p.height && !p.weight) return "아직 입력하지 않았어요";
+  return [p.height && `${p.height}cm`, p.weight && `${p.weight}kg`, { m: "남성", f: "여성" }[p.sex], { beg: "운동 처음", mid: "1년 미만", adv: "1년 이상" }[p.level]].filter(Boolean).join(" · ");
+}
+const obState = {};
+function openOnboard() {
+  const p = profile();
+  $("obH").value = p.height || ""; $("obW").value = p.weight || ""; $("obErr").textContent = "";
+  Object.assign(obState, { sex: p.sex || "x", level: p.level || recPrefs().level || "beg", goal: p.goal || recPrefs().goal || "hyper", coach: p.coach || settings.coach || "kind" });
+  document.querySelectorAll("#onboard .seg[data-ob]").forEach(w => w.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.val === obState[w.dataset.ob])));
+  const bg = $("onboard"); bg.hidden = false; requestAnimationFrame(() => bg.classList.add("open")); document.body.style.overflow = "hidden";
+}
+function closeOnboard() { const bg = $("onboard"); bg.classList.remove("open"); document.body.style.overflow = ""; setTimeout(() => { bg.hidden = true; }, 220); }
+document.querySelectorAll("#onboard .seg[data-ob]").forEach(w => w.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return; obState[w.dataset.ob] = b.dataset.val;
+  w.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+}));
+function refreshSegs() { document.querySelectorAll(".seg[data-key]").forEach(w => w.querySelectorAll("button").forEach(b => { const on = b.dataset.val === String(settings[w.dataset.key]); b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); })); }
+$("obGo").addEventListener("click", () => {
+  const h = parseFloat($("obH").value), w = parseFloat($("obW").value);
+  if (!(h >= 120 && h <= 220)) { $("obErr").textContent = "키를 120~220cm 사이로 입력해 주세요."; return; }
+  if (!(w >= 30 && w <= 200)) { $("obErr").textContent = "몸무게를 30~200kg 사이로 입력해 주세요."; return; }
+  saveProfile({ height: Math.round(h), weight: Math.round(w * 10) / 10, sex: obState.sex, level: obState.level, goal: obState.goal, coach: obState.coach, done: true, at: Date.now() });
+  settings.coach = obState.coach; settings.guide = obState.level === "beg" ? "beg" : "pro";
+  settings.recPrefs = { ...recPrefs(), level: obState.level, goal: obState.goal }; saveSettings();
+  refreshSegs(); $("meText").textContent = meText(); kgFor = null; renderPicker(); closeOnboard();
+  showToast("내 몸에 맞게 설정했어요");
+});
+$("obSkip").addEventListener("click", () => { const p = profile(); if (!p.done) saveProfile({ ...p, done: true, skipped: true }); closeOnboard(); });
+$("meEdit").addEventListener("click", () => { closeSettings(); setTimeout(openOnboard, 240); });
+$("meText").textContent = meText();
+if (!profile().done) setTimeout(openOnboard, 500);
+
+// ===================== 무게 기록 + 다음 무게 추천 =====================
+const KG_KEY = "barofit-weights";
+const NOKG = new Set(["pushup", "pullup", "dips", "plank", "jjack"]);
+const usesKg = e => !e.hold && !NOKG.has(e.id);
+const kgStep = e => ["raise", "frontraise", "hammer", "curl", "ohext"].includes(e.id) ? 1 : 2.5;
+// 남성 초보 기준, 몸무게 대비 시작 무게 (덤벨은 한 손 기준). 여성 0.65배, 경험에 따라 1.4~1.9배
+const START_RATIO = { squat: 0.5, lunge: 0, rdl: 0.4, deadlift: 0.6, bench: 0.4, press: 0.1, raise: 0.04, curl: 0.08, hammer: 0.08, row: 0.35, latpull: 0.4, dbrow: 0.15,
+  ohext: 0.12, pushdown: 0.25, frontraise: 0.04, legpress: 1.0, legext: 0.3, hipthrust: 0.5, uprow: 0.25 };
+const kgAll = () => { try { return JSON.parse(localStorage.getItem(KG_KEY) || "{}"); } catch (e) { return {}; } };
+const kgHist = id => kgAll()[id] || [];
+function startKg(e) {
+  const p = profile(), bw = +p.weight || (p.sex === "f" ? 55 : 70), st = kgStep(e);
+  if ((p.level || recPrefs().level || "beg") === "beg" && ["squat", "lunge", "hipthrust"].includes(e.id)) return 0; // 처음이면 맨몸부터
+  const r = (START_RATIO[e.id] ?? 0) * (p.sex === "f" ? 0.65 : 1) * ({ beg: 1, mid: 1.4, adv: 1.9 }[p.level || recPrefs().level] || 1);
+  return Math.round(bw * r / st) * st;
+}
+function kgAdvice(e) {
+  const h = kgHist(e.id), st = kgStep(e), inc = st * (e.group === "하체" && st === 2.5 ? 2 : 1);
+  if (!h.length) { const kg = startKg(e); return { kg, why: kg ? (profile().weight ? "몸무게와 운동 경험으로 계산한 시작 무게예요. 가볍게 느껴지면 올리세요." : "기본 시작 무게예요. 내 정보에 몸무게를 넣으면 더 정확해요.") : "맨몸으로 시작해요. 익숙해지면 무게를 더하세요." }; }
+  const last = h[h.length - 1];
+  if (last.form != null && last.form >= 80 && last.full) return { kg: last.kg + inc, why: `지난번 ${last.kg}kg를 자세 ${last.form}점으로 다 채웠어요. ${inc}kg 올려봐요.` };
+  if (last.form != null && last.form < 60) return { kg: Math.max(0, last.kg - inc), why: `지난번 자세가 ${last.form}점이었어요. 무게를 조금 낮춰 자세부터 잡아요.` };
+  return { kg: last.kg, why: last.full ? `지난번과 같은 ${last.kg}kg로 자세를 더 다듬어요.` : `지난번 목표를 다 못 채웠어요. 같은 ${last.kg}kg로 다시 도전해요.` };
+}
+let curKg = 0, kgFor = null;
+const kgText = k => k ? `${Math.round(k * 10) / 10}kg` : "맨몸";
+function renderKg() {
+  const card = $("kgCard"); if (!usesKg(ex)) { card.hidden = true; return; }
+  const adv = kgAdvice(ex); if (kgFor !== ex.id) { curKg = adv.kg; kgFor = ex.id; }
+  card.hidden = false; $("kgOut").textContent = kgText(curKg);
+  $("kgUse").textContent = `추천 ${kgText(adv.kg)}`; $("kgUse").hidden = curKg === adv.kg;
+  $("kgWhy").textContent = adv.why;
+}
+$("kgCard").addEventListener("click", e => {
+  const b = e.target.closest(".kg-btn"); if (b) { curKg = Math.max(0, Math.round((curKg + Number(b.dataset.kg) * kgStep(ex)) * 10) / 10); renderKg(); return; }
+  if (e.target.closest("#kgUse")) { curKg = kgAdvice(ex).kg; renderKg(); }
+});
+function saveKgHistory(e, sets, target) {
+  if (!usesKg(e) || !sets.length) return;
+  const kgs = sets.map(x => x.kg).filter(x => x != null); if (!kgs.length) return;
+  const scores = sets.map(x => x.score).filter(x => x != null);
+  const rec = { d: dayStr(new Date()), kg: Math.max(...kgs), reps: target.reps, sets: sets.length,
+    form: scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null,
+    full: sets.length >= target.sets && sets.every(x => x.good + x.bad >= target.reps) };
+  const all = kgAll(); (all[e.id] = all[e.id] || []).push(rec); all[e.id] = all[e.id].slice(-30);
+  try { localStorage.setItem(KG_KEY, JSON.stringify(all)); } catch (er) {}
+}
+
+// ===================== 판정 보정 (사용자 피드백으로 내 몸에 맞추기) =====================
+const TUNE_KEY = "barofit-tune", DIAG_KEY = "barofit-diag";
+const tunes = () => { try { return JSON.parse(localStorage.getItem(TUNE_KEY) || "{}"); } catch (e) { return {}; } };
+const tuneFor = id => tunes()[id] || {};
+function saveTune(id, t) { const all = tunes(); all[id] = t; try { localStorage.setItem(TUNE_KEY, JSON.stringify(all)); } catch (e) {} renderTuneNote(); }
+const tuneOff = (id, k) => !!(tuneFor(id).off || {})[k];
+let diagBuf = [];
+function pushDiag(d) { diagBuf.push({ t: Date.now(), view: camView, strict: settings.strict, ...d }); }
+function flushDiag() {
+  if (!diagBuf.length) return;
+  let all = []; try { all = JSON.parse(localStorage.getItem(DIAG_KEY) || "[]"); } catch (e) {}
+  all = all.concat(diagBuf).slice(-400); diagBuf = [];
+  try { localStorage.setItem(DIAG_KEY, JSON.stringify(all)); } catch (e) {}
+}
+function applyFix(exId, fix) {
+  const t = { ...tuneFor(exId) }; t.off = { ...(t.off || {}) }; const name = exById(exId).name; let msg;
+  const up = (k, n, max = 15) => { t[k] = Math.max(-10, Math.min(max, (t[k] || 0) + n)); };
+  if (fix === "count") { up("depth", 4); up("lock", 4); msg = `${name}: 덜 깊어도 세도록 기준을 낮췄어요`; }
+  else if (fix === "strict") { up("depth", -3); up("lock", -2); msg = `${name}: 기준을 조금 더 엄격하게 바꿨어요`; }
+  else if (fix.startsWith("err:")) {
+    const k = fix.slice(4);
+    if (k === "lean" && exId === "squat") { up("lean", 4); msg = `${name}: 상체 숙임을 ${t.lean}°까지 더 봐줄게요`; }
+    else if (k === "noLockout") { up("lock", 5); msg = `${name}: ‘끝까지 안 폄’ 기준을 낮췄어요`; }
+    else if (k === "depth" || k === "range") { up("depth", 4); msg = `${name}: 덜 깊어도 세도록 기준을 낮췄어요`; }
+    else { t.off[k] = true; msg = `${name}: 이제 ‘${ERR_KO[k] || k}’는 지적하지 않을게요`; }
+  }
+  saveTune(exId, t); pushDiag({ ex: exId, feedback: fix }); flushDiag(); showToast(msg);
+}
+function renderTuneNote() {
+  const n = Object.keys(tunes()).length;
+  $("tuneNote").textContent = n ? `지금 ${n}개 운동의 기준을 내 몸에 맞게 조정해 뒀어요. 리포트에서 “판정이 틀렸어요”를 누르면 더 맞춰져요.` : "운동 리포트에서 “판정이 틀렸어요”를 누르면 그 운동의 기준을 내 몸에 맞게 조정해요.";
+}
+renderTuneNote();
+$("tuneReset").addEventListener("click", () => { try { localStorage.removeItem(TUNE_KEY); } catch (e) {} renderTuneNote(); showToast("판정 보정을 처음 상태로 되돌렸어요"); });
+$("diagExport").addEventListener("click", () => {
+  flushDiag(); let diag = []; try { diag = JSON.parse(localStorage.getItem(DIAG_KEY) || "[]"); } catch (e) {}
+  const data = { app: "barofit-diag", version: 1, savedAt: new Date().toISOString(), profile: profile(), settings: { strict: settings.strict, guide: settings.guide }, tune: tunes(), reps: diag };
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: "application/json" }));
+  a.download = `바로핏-판정데이터-${dayStr(new Date())}.json`; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+});
+function judgeHTML(s) {
+  const items = s.items.filter(it => !it.hold);
+  if (!items.length) return "";
+  return `<div class="judge" id="judge"><b>오늘 판정이 정확했나요?</b>
+    <div class="judge-row"><button class="jbtn" data-j="ok" type="button">👍 정확했어요</button><button class="jbtn" data-j="bad" type="button">👎 틀린 게 있었어요</button></div>
+    <div id="judgeMore" hidden>${items.map(it => {
+      const errs = [...new Set(it.sets.flatMap(x => Object.keys(x.errors || {})))].filter(k => ERR_KO[k]);
+      return `<div class="jex"><span>${it.name}</span><div class="judge-row">
+        <button class="jbtn" data-fix="count" data-ex="${it.ex}" type="button">제대로 했는데 안 셌어요</button>
+        ${errs.map(k => `<button class="jbtn" data-fix="err:${k}" data-ex="${it.ex}" type="button">‘${ERR_KO[k]}’ 지적이 틀렸어요</button>`).join("")}
+        <button class="jbtn" data-fix="strict" data-ex="${it.ex}" type="button">더 엄격해도 돼요</button></div></div>`;
+    }).join("")}<p>누른 내용은 이 기기에만 저장돼서, 다음부터 그 운동을 내 몸에 맞게 판정해요. 설정에서 언제든 초기화할 수 있어요.</p></div></div>`;
+}
+document.addEventListener("click", e => {
+  const j = e.target.closest("#judge .jbtn"); if (!j) return;
+  if (j.dataset.j === "ok") { j.classList.add("on"); $("judgeMore").hidden = true; pushDiag({ feedback: "ok" }); flushDiag(); showToast("고마워요! 기준을 그대로 유지할게요"); return; }
+  if (j.dataset.j === "bad") { j.classList.add("on"); $("judgeMore").hidden = false; return; }
+  if (j.dataset.fix && !j.classList.contains("on")) { j.classList.add("on"); applyFix(j.dataset.ex, j.dataset.fix); }
+});
+
+// ===================== 이번 주 운동 + 연속 기록 =====================
+function workoutDays() { return new Set(loadLog().filter(e => e.type === "workout").map(e => e.date)); }
+function streakNow() {
+  const days = workoutDays(); let n = 0; const d = new Date();
+  if (!days.has(dayStr(d))) d.setDate(d.getDate() - 1); // 오늘 아직 안 했으면 어제부터 셈
+  while (days.has(dayStr(d))) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function daysSinceLast() {
+  const list = [...workoutDays()].filter(x => x < dayStr(new Date())).sort(); if (!list.length) return null;
+  const [y, m, dd] = list[list.length - 1].split("-").map(Number); return Math.round((new Date().setHours(0, 0, 0, 0) - new Date(y, m - 1, dd).getTime()) / 864e5);
+}
+function renderWeek() {
+  const days = workoutDays(), now = new Date(), dow = (now.getDay() + 6) % 7, mon = new Date(now); mon.setDate(now.getDate() - dow);
+  let cnt = 0;
+  const cells = ["월", "화", "수", "목", "금", "토", "일"].map((n, i) => {
+    const d = new Date(mon); d.setDate(mon.getDate() + i); const k = dayStr(d), done = days.has(k); if (done) cnt++;
+    return `<div class="wk-d${done ? " done" : ""}${i === dow ? " today" : ""}"><i>✓</i>${n}</div>`;
+  }).join("");
+  const st = streakNow(), today = days.has(dayStr(now));
+  const tag = st >= 2 ? `🔥 ${st}일 연속` : today ? "오늘 운동 완료!" : st === 1 ? "어제 했어요. 오늘도 이어가요" : "오늘 시작해 볼까요?";
+  $("weekCard").innerHTML = `<div class="wk-head"><b>이번 주 ${cnt}일 운동</b><span>${tag}</span></div><div class="wk-days">${cells}</div>`;
+}
+renderWeek();
+
+// ===================== 백업 알림 =====================
+(function () {
+  let ui = {}; try { ui = JSON.parse(localStorage.getItem("barofit-ui") || "{}"); } catch (e) {}
+  const n = loadLog().filter(e => e.type === "workout").length, now = Date.now();
+  if (n >= 3 && now - (ui.lastBackup || 0) > 7 * 864e5 && now - (ui.backupNudgeAt || 0) > 3 * 864e5) {
+    $("nudge").hidden = false; ui.backupNudgeAt = now; try { localStorage.setItem("barofit-ui", JSON.stringify(ui)); } catch (e) {}
+  }
+  $("nudgeX").addEventListener("click", () => { $("nudge").hidden = true; });
+})();
+
+// ===================== 쉬는 시간: +15초 / 건너뛰기 / 세트 요약 =====================
+let restCtl = null;
+function restUI(on) { $("restAdd").hidden = !on; $("restSkip").hidden = !on; if (!on) restCtl = null; }
+$("restAdd").addEventListener("click", () => { if (restCtl) restCtl.add(15); });
+$("restSkip").addEventListener("click", () => { if (restCtl) restCtl.skip(); });
+function setSummary(lg) {
+  if (!lg) return "";
+  if (ex.hold) return lg.hold ? `이번 세트 ${Math.round(lg.hold)}초 버텼어요` : "";
+  const sc = lg.scores && lg.scores.length ? Math.round(lg.scores.reduce((a, b) => a + b, 0) / lg.scores.length) : null;
+  const top = Object.entries(lg.errors || {}).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([k, n]) => `${ERR_KO[k] || k} ${n}번`);
+  return [sc != null ? `이번 세트 자세 ${sc}점` : "", top.length ? top.join(", ") : "실수 없음", lg.kg ? kgText(lg.kg) : ""].filter(Boolean).join(" · ");
+}
+
+// ===================== 화면 테마, 크게 보기 =====================
+function applyDisplay() {
+  const dark = settings.theme === "dark" || (settings.theme !== "light" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  document.querySelector(".cam").classList.toggle("big", settings.bigtext === "on");
+}
+applyDisplay();
+renderKg();
+
 // ===== 버튼 =====
 const showError = msg => { const b = $("errorBox"); b.innerHTML = msg; b.style.display = "block"; };
 async function requestWakeLock() { try { if ("wakeLock" in navigator) wakeLock = await navigator.wakeLock.request("screen"); } catch (e) {} }
@@ -2551,11 +2885,15 @@ $("goBtn").addEventListener("click", () => {
   session = newSession(); sm = null; renderPicker(); renderHud();
   $("goBtn").hidden = true; $("endBtn").hidden = false; demoSeen.clear();
   // 아이폰·아이패드는 버튼을 누른 순간에 한 번 말해야 그 뒤 음성이 계속 나옴 → 시작 안내를 바로 말함
-  if (settings.mode === "voice") { try { const u = new SpeechSynthesisUtterance(isDrill() ? "준비!" : "준비하세요"); applyVoice(u, 1.05, 1.0); speechSynthesis.speak(u); } catch (x) {} }
+  if (settings.mode === "voice") {
+    const st = streakNow(), gap = daysSinceLast();
+    const hi = isDrill() ? (st >= 2 ? `${st}일 연속이다. ...흥, 인정한다. 준비!` : gap != null && gap >= 2 ? "며칠 쉬었지? 오늘 그만큼 더 간다! 준비!" : "준비!") : (st >= 2 ? `${st}일 연속이에요! 준비하세요` : "준비하세요");
+    try { const u = new SpeechSynthesisUtterance(hi.replace(/\.\.\./g, " ")); applyVoice(u, 1.05, 1.0); speechSynthesis.speak(u); } catch (x) {}
+  }
   withDemo(() => startCountdown(beginSet));
 });
 $("endBtn").addEventListener("click", () => {
-  clearTimeout(restTimer); hideBig(); hideHalmae(); demo = null; $("skipDemo").hidden = true; hideCap(); document.querySelector(".cam").classList.remove("demo-on");
+  clearTimeout(restTimer); restUI(false); hideBig(); hideHalmae(); demo = null; $("skipDemo").hidden = true; hideCap(); document.querySelector(".cam").classList.remove("demo-on");
   phase = "done"; try { speechSynthesis.cancel(); } catch (e) {}
   const s = closeSession(); routine = null; renderPicker();
   if (s && window.HM) HM.afterSession("workout", s);
@@ -2564,7 +2902,7 @@ $("endBtn").addEventListener("click", () => {
 $("againBtn").addEventListener("click", () => { $("report").hidden = true; phase = "idle"; $("goBtn").hidden = !camOn; $("camBtn").hidden = camOn; renderPicker(); });
 
 // 시험용 내부 접근
-window.__wk = { squatLeanMax, runDemo, withDemo, demoProject, demoLerp3, drawDemo, DEMO_POSE, get demo() { return demo; }, ghostPose, ghostTheta, liveErrors, draw, get ghostInfo() { return ghostInfo; }, renderCap, get capText() { return [$("capMain").textContent, $("capSub").textContent, $("capWhy").hidden ? "" : $("capWhy").textContent]; }, frontCorrection, get camView() { return camView; }, get bodyRatio() { return bodyRatio; }, recommend, buildFeedback, showReport, metrics, updateRep, updateHold, beginSet, refFor, setRecording: on => { recording = on ? { reps: [] } : null; }, finishRecording, get recording() { return recording; }, finishSet, closeSession, loadLog, startRoutine: id => { routine = { ...routineById(id), idx: 0 }; ex = exById(routine.items[0].ex); session = newSession(); setNo = 1; log = []; }, get routine() { return routine; }, get ex() { return ex.id; }, get state() { return { phase, repCount, holdTime, setNo, log, errStreak }; }, setEx: id => { ex = exById(id); }, setPhase: p => phase = p };
+window.__wk = { kgAdvice, startKg, sessionKcal, applyFix, tuneFor, streakNow, renderWeek, profile, get curKg() { return curKg; }, squatLeanMax, runDemo, withDemo, demoProject, demoLerp3, drawDemo, DEMO_POSE, get demo() { return demo; }, ghostPose, ghostTheta, liveErrors, draw, get ghostInfo() { return ghostInfo; }, renderCap, get capText() { return [$("capMain").textContent, $("capSub").textContent, $("capWhy").hidden ? "" : $("capWhy").textContent]; }, frontCorrection, get camView() { return camView; }, get bodyRatio() { return bodyRatio; }, recommend, buildFeedback, showReport, metrics, updateRep, updateHold, beginSet, refFor, setRecording: on => { recording = on ? { reps: [] } : null; }, finishRecording, get recording() { return recording; }, finishSet, closeSession, loadLog, startRoutine: id => { routine = { ...routineById(id), idx: 0 }; ex = exById(routine.items[0].ex); session = newSession(); setNo = 1; log = []; }, get routine() { return routine; }, get ex() { return ex.id; }, get state() { return { phase, repCount, holdTime, setNo, log, errStreak }; }, setEx: id => { ex = exById(id); }, setPhase: p => phase = p };
 
 try { window.__coach && window.__coach.faces(m => halmaeSVG(m, true)); } catch (e) {}
 </script>
