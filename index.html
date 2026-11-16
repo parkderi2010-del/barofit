@@ -126,6 +126,8 @@
   .field-label small{font-weight:600;color:var(--level)}
   .gear{margin-left:auto;display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px;border:0;border-radius:999px;background:var(--surface, #F2F4F7);color:inherit;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
   .gear svg{width:20px;height:20px}
+  .demo-skip{display:none;position:absolute;top:12px;right:12px;z-index:4;height:38px;padding:0 16px;border:0;border-radius:999px;background:rgba(255,255,255,.92);color:#16181D;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
+  .cam.demo-on .demo-skip{display:block}
   .cam:not(.live) .hud-count{display:none} /* 카메라 켜기 전엔 숫자를 숨겨 안내 문구와 겹치지 않게 */
   /* 설정 시트 */
   .sbg{position:fixed;inset:0;z-index:60;background:rgba(16,18,24,0);display:flex;align-items:flex-end;justify-content:center;transition:background .22s}
@@ -504,6 +506,7 @@
       <div class="hud-timer" id="hudTimer"></div><div class="view-chip" id="viewChip" hidden></div>
       <div class="hud-count" id="hudCount"><b id="repNow">0</b><small id="repGoal">/ 10</small><span id="setNow">1세트 / 3세트</span><span id="refNow" class="hud-ref"></span></div>
       <div class="cap" id="cap" hidden aria-live="polite"><div class="cap-main" id="capMain"></div><div class="cap-bar" id="capBarWrap" hidden><i id="capBar"></i><span class="cap-goal"></span></div><div class="cap-sub" id="capSub"></div><div class="cap-why" id="capWhy" hidden></div></div>
+      <button class="demo-skip" id="demoSkipCam" type="button">건너뛰기 ›</button>
       <div class="hud-big" id="hudBig"></div>
       <div class="cam-edge" id="camEdge"></div>
       <div class="toast" id="toast"></div>
@@ -580,6 +583,11 @@
           <div class="field-note">초보는 하늘색 점선을 따라 움직이면 되고, 중급 이상은 자세가 틀린 부위만 빨간 선으로 바로 표시돼요.</div>
         </div>
         <div>
+          <div class="field-label">운동 전 자세 시범</div>
+          <div class="seg" data-key="demo"><button data-val="on">보기</button><button data-val="off">안 보기</button></div>
+          <div class="field-note">초보 모드에서 운동을 시작하기 전에 앞모습·옆모습 시범을 보여줘요. 동작을 이미 알면 꺼 두세요.</div>
+        </div>
+        <div>
           <div class="field-label">모범 동작과 비교</div>
           <div class="seg" data-key="useRef"><button data-val="on">켜기</button><button data-val="off">끄기</button></div>
           <div class="field-note">모범 동작을 등록한 운동은 매 회 일치도를 알려줘요.</div>
@@ -637,7 +645,7 @@ const MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmark
 // ===== 설정 (앉은 자세 화면과 같은 저장 공간을 써서 사투리·알림 방식이 이어짐) =====
 // 스쿼트 상체 숙임 허용치: 바르게 앉아도 상체는 35~50° 기울어지는 게 정상
 const squatLeanMax = () => ({ easy: 68, normal: 60, hard: 52 }[settings.strict] || 60);
-const DEFAULTS = { persona: "coach", mode: "voice", dialect: "gs", strict: "normal", exercise: "squat", reps: 10, sets: 3, rest: 60, holdSec: 30, wmode: "routine", routineId: "begin", useRef: "on", vtone: "normal", voiceName: "", vspeed: "1", coach: "kind" };
+const DEFAULTS = { persona: "coach", mode: "voice", dialect: "gs", strict: "normal", exercise: "squat", reps: 10, sets: 3, rest: 60, holdSec: 30, wmode: "routine", routineId: "begin", useRef: "on", vtone: "normal", voiceName: "", vspeed: "1", coach: "kind", demo: "on" };
 let settings = { ...DEFAULTS };
 try { Object.assign(settings, JSON.parse(localStorage.getItem("barofit") || "{}")); } catch (e) {}
 const saveSettings = () => {
@@ -1127,7 +1135,7 @@ function unlockAudio() {
   } catch (e) {}
   try {
     if ("speechSynthesis" in window && !speechUnlocked) {
-      const u = new SpeechSynthesisUtterance(" "); u.volume = 0; speechSynthesis.speak(u); speechUnlocked = true;
+      const u = new SpeechSynthesisUtterance("."); u.volume = 0.01; u.rate = 2; speechSynthesis.speak(u); speechUnlocked = true;
     }
   } catch (e) {}
 }
@@ -1490,10 +1498,13 @@ function sayCount(n, errKey = null, extra = "") {
 function sayQueued(t, rate = 1.05) {
   if (!("speechSynthesis" in window) || settings.mode !== "voice") return;
   try {
-    if (speechSynthesis.pending) speechSynthesis.cancel(); // 두 개 이상 밀리면 정리
-    speechSynthesis.resume();
-    if (isDrill()) { drillSpeak(t, rate); return; }
-    const u = new SpeechSynthesisUtterance(t); applyVoice(u, rate, 1.05); u.volume = 1; speechSynthesis.speak(u);
+    const go = () => {
+      speechSynthesis.resume();
+      if (isDrill()) { drillSpeak(t, rate); return; }
+      const u = new SpeechSynthesisUtterance(t); applyVoice(u, rate, 1.05); u.volume = 1; speechSynthesis.speak(u);
+    };
+    // 말이 밀려 있으면 정리하되, 아이폰·아이패드는 cancel 직후 바로 말하면 소리가 사라지므로 잠깐 쉬었다 말함
+    if (speechSynthesis.pending) { speechSynthesis.cancel(); setTimeout(go, 160); } else go();
   } catch (e) {}
 }
 // 호랑이 조교 억양: "!"로 끝나는 구호는 더 낮고 짧게 끊어서, 혼잣말("...")은 살짝 느리게
@@ -1875,7 +1886,7 @@ function renderFeedback(s) {
     <div class="fb-next"><b>다음 목표</b>${fb.next}</div>`;
   if (settings.mode === "voice") setTimeout(() => {
     const line = `오늘은 ${fb.grade} 등급이에요. ${fb.good[0]} 고칠 점은, ${fb.fix[0].t}`;
-    try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(line); applyVoice(u, 1.05, 1.05); speechSynthesis.speak(u); } catch (e) {}
+    try { speechSynthesis.cancel(); setTimeout(() => { if (isDrill()) { drillSpeak(line, 1.0); return; } const u = new SpeechSynthesisUtterance(line); applyVoice(u, 1.05, 1.05); speechSynthesis.speak(u); }, 160); } catch (e) {}
   }, 3400);
   return fb;
 }
@@ -2296,7 +2307,7 @@ $("sheetClose").addEventListener("click", closeSettings);
 $("settingsSheet").addEventListener("click", e => { if (e.target.id === "settingsSheet") closeSettings(); });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("settingsSheet").hidden) closeSettings(); });
 document.querySelector('.seg[data-key="vtone"]').addEventListener("click", e => { if (e.target.closest("button")) tryVoice(); });
-bindSeg("vspeed"); bindSeg("coach");
+bindSeg("vspeed"); bindSeg("coach"); bindSeg("demo");
 document.querySelector('.seg[data-key="coach"]').addEventListener("click", e => { if (e.target.closest("button")) tryVoice(); });
 document.querySelector('.seg[data-key="vspeed"]').addEventListener("click", e => { if (e.target.closest("button")) tryVoice(); }); bindSeg("strict"); bindSeg("wmode"); bindSeg("useRef");
 document.querySelector('.seg[data-key="wmode"]').addEventListener("click", () => { if (phase === "idle" || phase === "done") renderPicker(); });
@@ -2463,7 +2474,7 @@ function demoSay(t) {
   try { const u = new SpeechSynthesisUtterance(t); applyVoice(u, 1.1, 1.05); speechSynthesis.speak(u); } catch (x) {}
 }
 function withDemo(next) {
-  if (guideMode() === "beg" && !demoSeen.has(ex.id) && DEMO_POSE[ex.id] && DEMO_TXT[ex.id]) runDemo(next); else next();
+  if (guideMode() === "beg" && settings.demo !== "off" && !demoSeen.has(ex.id) && DEMO_POSE[ex.id] && DEMO_TXT[ex.id]) runDemo(next); else next();
 }
 function runDemo(next) {
   demoSeen.add(ex.id); hideHalmae(); hideBig();
@@ -2506,6 +2517,7 @@ function finishDemo() {
   if (phase === "demo") n();
 }
 $("skipDemo").addEventListener("click", () => { try { speechSynthesis.cancel(); } catch (x) {} finishDemo(); });
+$("demoSkipCam").addEventListener("click", () => { try { speechSynthesis.cancel(); } catch (x) {} finishDemo(); });
 
 // ===== 버튼 =====
 const showError = msg => { const b = $("errorBox"); b.innerHTML = msg; b.style.display = "block"; };
@@ -2533,11 +2545,13 @@ $("camBtn").addEventListener("click", async () => {
   requestAnimationFrame(loop);
 });
 $("goBtn").addEventListener("click", () => {
-  unlockAudio(); $("report").hidden = true; log = []; setNo = 1;
+  unlockAudio(); try { speechSynthesis.cancel(); } catch (x) {} $("report").hidden = true; log = []; setNo = 1;
   if (settings.wmode === "routine") { routine = { ...routineById(settings.routineId), idx: 0 }; ex = exById(routine.items[0].ex); }
   else { routine = null; ex = exById(settings.exercise); }
   session = newSession(); sm = null; renderPicker(); renderHud();
   $("goBtn").hidden = true; $("endBtn").hidden = false; demoSeen.clear();
+  // 아이폰·아이패드는 버튼을 누른 순간에 한 번 말해야 그 뒤 음성이 계속 나옴 → 시작 안내를 바로 말함
+  if (settings.mode === "voice") { try { const u = new SpeechSynthesisUtterance(isDrill() ? "준비!" : "준비하세요"); applyVoice(u, 1.05, 1.0); speechSynthesis.speak(u); } catch (x) {} }
   withDemo(() => startCountdown(beginSet));
 });
 $("endBtn").addEventListener("click", () => {
