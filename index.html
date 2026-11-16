@@ -1267,22 +1267,31 @@ function loadVoice() {
   koVoices = speechSynthesis.getVoices().filter(v => /^ko/i.test(v.lang));
   // 같은 이름이 여러 개면 하나만, 고품질을 앞으로
   const seen = new Set(); koVoices = koVoices.filter(v => { const k = v.voiceURI || v.name; return !seen.has(k) && seen.add(k); }).sort((a, b) => voiceHQ(b) - voiceHQ(a) || a.name.localeCompare(b.name));
-  koVoice = koVoices.find(v => (v.voiceURI || v.name) === settings.voiceName) || koVoices.find(v => v.name === settings.voiceName) || koVoices.find(voiceHQ) || koVoices[0] || null;
+  const want = (settings.voiceName || "").replace(/^male:/, "");
+  koVoice = koVoices.find(v => (v.voiceURI || v.name) === want) || koVoices.find(v => v.name === want) || koVoices.find(voiceHQ) || koVoices[0] || null;
   const sel = document.getElementById("voiceSel");
   if (sel) {
-    sel.innerHTML = koVoices.length ? koVoices.map(v => `<option value="${(v.voiceURI || v.name).replace(/"/g, "&quot;")}">${voiceLabel(v)}</option>`).join("") : `<option value="">기본 목소리</option>`;
-    sel.value = koVoice ? (koVoice.voiceURI || koVoice.name) : "";
+    const val = v => (v.voiceURI || v.name).replace(/"/g, "&quot;");
+    const real = koVoices.map(v => `<option value="${val(v)}">${voiceLabel(v)}</option>`).join("");
+    // 기기에 남성 목소리가 없을 때를 위해: 같은 목소리를 낮고 굵게 바꾼 "남성 톤"
+    const male = koVoices.map(v => `<option value="male:${val(v)}">${voiceLabel(v).replace(/ · 고품질/, "")} → 남성 톤${voiceHQ(v) ? " (고품질)" : ""}</option>`).join("");
+    sel.innerHTML = koVoices.length ? `<optgroup label="기기 목소리">${real}</optgroup><optgroup label="남성 톤으로 바꾸기">${male}</optgroup>` : `<option value="">기본 목소리</option><option value="male:">기본 목소리 → 남성 톤</option>`;
+    sel.value = koVoice ? (isMaleTone() ? "male:" : "") + (koVoice.voiceURI || koVoice.name) : (isMaleTone() ? "male:" : "");
     const note = document.getElementById("voiceNote");
     if (note) note.textContent = koVoices.length <= 1
       ? "이 기기에는 한국어 목소리가 하나뿐이에요. 아이폰·아이패드는 설정 → 손쉬운 사용 → 읽기 및 말하기 → 음성 → 한국어에서 다른 목소리나 고품질 목소리를 내려받으면 여기 나타나요."
       : `이 기기의 한국어 목소리 ${koVoices.length}개 중에서 고를 수 있어요. 더 많은 목소리는 설정 → 손쉬운 사용 → 읽기 및 말하기 → 음성 → 한국어에서 내려받을 수 있어요.`;
   }
 }
+const isMaleTone = () => /^male:/.test(settings.voiceName || "");
 function applyVoice(u, rate = 1, pitch = 1) {
   const t = VTONE[settings.vtone] || VTONE.normal;
   u.lang = "ko-KR"; try { if (koVoice) u.voice = koVoice; } catch (x) {}
   const sp = parseFloat(settings.vspeed) || 1, dr = isDrill() ? { rate: 1.0, pitch: 0.62 } : { rate: 1, pitch: 1 };
-  u.rate = Math.min(2, Math.max(0.5, rate * t.rate * sp * dr.rate)); u.pitch = Math.min(2, Math.max(0, pitch * t.pitch * dr.pitch)); u.volume = 1;
+  // 남성 톤: 목소리 높이를 크게 낮추고 조금 천천히 (너무 낮으면 기계음이 되므로 0.4 아래로는 안 내림)
+  const mt = isMaleTone() ? { rate: 0.95, pitch: isDrill() ? 0.85 : 0.55 } : { rate: 1, pitch: 1 };
+  u.rate = Math.min(2, Math.max(0.5, rate * t.rate * sp * dr.rate * mt.rate));
+  u.pitch = Math.min(2, Math.max(isMaleTone() ? 0.4 : 0, pitch * t.pitch * dr.pitch * mt.pitch)); u.volume = 1;
   return u;
 }
 if ("speechSynthesis" in window) { loadVoice(); speechSynthesis.onvoiceschanged = loadVoice; }
