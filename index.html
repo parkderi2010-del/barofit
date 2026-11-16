@@ -125,6 +125,9 @@
   .field-label{display:flex;justify-content:space-between;font-size:14px;font-weight:700;margin-bottom:8px}
   .field-label small{font-weight:600;color:var(--level)}
   .field-note{font-size:12.5px;color:var(--ink-2);margin-top:6px;line-height:1.5}
+  .voice-row{display:flex;gap:8px;align-items:center}
+  .voice-sel{flex:1;min-width:0;height:44px;padding:0 12px;border-radius:12px;border:1px solid var(--line, #E3E6EC);background:var(--card, #fff);color:inherit;font:inherit;font-size:15px;font-weight:600}
+  .voice-try{flex:none;height:44px;padding:0 16px}
   .seg{display:flex;background:var(--paper);border-radius:12px;padding:4px;gap:4px}
   .seg button{flex:1;border:0;background:transparent;border-radius:9px;padding:10px 6px;font-size:14px;font-weight:600;color:var(--ink-2);cursor:pointer;min-height:42px}
   .seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(22,24,29,.12)}
@@ -500,6 +503,12 @@
           <div class="field-note">헬스장에서는 에어팟을 연결하면 코치 목소리가 귀로만 들려요.</div>
         </div>
         <div>
+          <div class="field-label">코치 목소리</div>
+          <div class="voice-row"><select id="voiceSel" class="voice-sel" aria-label="코치 목소리 선택"></select><button class="btn voice-try" id="voiceTry" type="button">들어보기</button></div>
+          <div class="seg" data-key="vtone" style="margin-top:8px"><button data-val="calm">차분하게</button><button data-val="normal">기본</button><button data-val="bright">활기차게</button><button data-val="deep">묵직하게</button></div>
+          <div class="field-note" id="voiceNote">이 기기에 있는 한국어 목소리 중에서 고를 수 있어요.</div>
+        </div>
+        <div>
           <div class="field-label">판정 기준</div>
           <div class="seg" data-key="strict"><button data-val="easy">너그럽게</button><button data-val="normal">보통</button><button data-val="hard">엄격하게</button></div>
           <div class="field-note">너그럽게는 운동을 처음 하는 분, 엄격하게는 정확한 자세를 연습하는 분께 맞아요.</div>
@@ -562,7 +571,7 @@ const WASM_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VER}
 const MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
 
 // ===== 설정 (앉은 자세 화면과 같은 저장 공간을 써서 사투리·알림 방식이 이어짐) =====
-const DEFAULTS = { persona: "coach", mode: "voice", dialect: "gs", strict: "normal", exercise: "squat", reps: 10, sets: 3, rest: 60, holdSec: 30, wmode: "routine", routineId: "begin", useRef: "on" };
+const DEFAULTS = { persona: "coach", mode: "voice", dialect: "gs", strict: "normal", exercise: "squat", reps: 10, sets: 3, rest: 60, holdSec: 30, wmode: "routine", routineId: "begin", useRef: "on", vtone: "normal", voiceName: "" };
 let settings = { ...DEFAULTS };
 try { Object.assign(settings, JSON.parse(localStorage.getItem("barofit") || "{}")); } catch (e) {}
 const saveSettings = () => {
@@ -1018,7 +1027,36 @@ function unlockAudio() {
 // 화면을 누를 때마다 오디오가 잠들어 있으면 다시 깨움
 document.addEventListener("pointerdown", unlockAudio, { passive: true });
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && audioCtx && audioCtx.state !== "running") { try { audioCtx.resume(); } catch (e) {} } });
-function loadVoice() { if ("speechSynthesis" in window) koVoice = speechSynthesis.getVoices().find(v => /^ko/i.test(v.lang)) || null; }
+// 목소리 톤: 기본 빠르기·높이에 곱해서 적용
+const VTONE = { calm: { rate: 0.9, pitch: 0.95 }, normal: { rate: 1, pitch: 1 }, bright: { rate: 1.1, pitch: 1.18 }, deep: { rate: 0.94, pitch: 0.72 } };
+let koVoices = [];
+const voiceHQ = v => /enhanced|premium|고품질|향상|natural|neural/i.test(v.name + " " + (v.voiceURI || ""));
+function voiceLabel(v) {
+  const n = v.name.replace(/\s*\((enhanced|premium|고품질|향상된?)\)/ig, "").replace(/^(Microsoft|Google)\s+/i, "").trim();
+  return n + (voiceHQ(v) ? " · 고품질" : "") + (/google/i.test(v.name) ? " (Google)" : "");
+}
+function loadVoice() {
+  if (!("speechSynthesis" in window)) return;
+  koVoices = speechSynthesis.getVoices().filter(v => /^ko/i.test(v.lang));
+  // 같은 이름이 여러 개면 하나만, 고품질을 앞으로
+  const seen = new Set(); koVoices = koVoices.filter(v => !seen.has(v.name) && seen.add(v.name)).sort((a, b) => voiceHQ(b) - voiceHQ(a) || a.name.localeCompare(b.name));
+  koVoice = koVoices.find(v => v.name === settings.voiceName) || koVoices.find(voiceHQ) || koVoices[0] || null;
+  const sel = document.getElementById("voiceSel");
+  if (sel) {
+    sel.innerHTML = koVoices.length ? koVoices.map(v => `<option value="${v.name.replace(/"/g, "&quot;")}">${voiceLabel(v)}</option>`).join("") : `<option value="">기본 목소리</option>`;
+    sel.value = koVoice ? koVoice.name : "";
+    const note = document.getElementById("voiceNote");
+    if (note) note.textContent = koVoices.length <= 1
+      ? "이 기기에는 한국어 목소리가 하나뿐이에요. 아이폰·아이패드는 설정 → 손쉬운 사용 → 읽기 및 말하기 → 음성 → 한국어에서 다른 목소리나 고품질 목소리를 내려받으면 여기 나타나요."
+      : `이 기기의 한국어 목소리 ${koVoices.length}개 중에서 고를 수 있어요. 더 많은 목소리는 설정 → 손쉬운 사용 → 읽기 및 말하기 → 음성 → 한국어에서 내려받을 수 있어요.`;
+  }
+}
+function applyVoice(u, rate = 1, pitch = 1) {
+  const t = VTONE[settings.vtone] || VTONE.normal;
+  u.lang = "ko-KR"; try { if (koVoice) u.voice = koVoice; } catch (x) {}
+  u.rate = Math.min(2, Math.max(0.5, rate * t.rate)); u.pitch = Math.min(2, Math.max(0, pitch * t.pitch));
+  return u;
+}
 if ("speechSynthesis" in window) { loadVoice(); speechSynthesis.onvoiceschanged = loadVoice; }
 function beep(freq = 880, dur = 0.16, times = 1) {
   if (!audioCtx) return;
@@ -1042,8 +1080,7 @@ function thud() {
 function speak(text, grandma = true) {
   if (!("speechSynthesis" in window)) return;
   try {
-    const u = new SpeechSynthesisUtterance(text); u.lang = "ko-KR"; if (koVoice) u.voice = koVoice;
-    u.volume = 1; u.rate = grandma ? 1.08 : 1.0; u.pitch = grandma ? 0.6 : 1.05;
+    const u = new SpeechSynthesisUtterance(text); applyVoice(u, grandma ? 1.08 : 1.0, grandma ? 0.6 : 1.05); u.volume = 1;
     speechSynthesis.resume();
     // 사파리는 cancel 직후 바로 speak 하면 소리가 씹힐 수 있어 잠깐 쉬었다 말함
     if (speechSynthesis.speaking || speechSynthesis.pending) { speechSynthesis.cancel(); setTimeout(() => speechSynthesis.speak(u), 150); }
@@ -1324,8 +1361,7 @@ function sayCount(n) {
   if (settings.mode === "beep") { beep(988, 0.12, 1); return; }
   try {
     speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(NUM[n - 1] || String(n)); u.lang = "ko-KR"; if (koVoice) u.voice = koVoice;
-    u.rate = 1.25; u.pitch = isCoach() ? 1.0 : 0.6; speechSynthesis.speak(u);
+    const u = new SpeechSynthesisUtterance(NUM[n - 1] || String(n)); applyVoice(u, 1.25, isCoach() ? 1.0 : 0.6); speechSynthesis.speak(u);
   } catch (e) {}
 }
 function scold(key, sticker = "퍽!") {
@@ -1670,7 +1706,7 @@ function renderFeedback(s) {
     <div class="fb-next"><b>다음 목표</b>${fb.next}</div>`;
   if (settings.mode === "voice") setTimeout(() => {
     const line = `오늘은 ${fb.grade} 등급이에요. ${fb.good[0]} 고칠 점은, ${fb.fix[0].t}`;
-    try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(line); u.lang = "ko-KR"; if (koVoice) u.voice = koVoice; u.rate = 1.05; speechSynthesis.speak(u); } catch (e) {}
+    try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(line); applyVoice(u, 1.05, 1.05); speechSynthesis.speak(u); } catch (e) {}
   }, 3400);
   return fb;
 }
@@ -2061,7 +2097,18 @@ function bindSeg(key) {
   render();
 }
 if (!settings.guide) settings.guide = recPrefs().level === "beg" ? "beg" : "pro";
-bindSeg("guide"); bindSeg("mode"); bindSeg("strict"); bindSeg("wmode"); bindSeg("useRef");
+bindSeg("guide"); bindSeg("vtone"); bindSeg("mode");
+loadVoice();
+$("voiceSel").addEventListener("change", e => { settings.voiceName = e.target.value; saveSettings(); loadVoice(); tryVoice(); });
+function tryVoice() {
+  if (!("speechSynthesis" in window)) { showToast("이 브라우저는 음성을 지원하지 않아요"); return; }
+  try { unlockAudio && unlockAudio(); } catch (x) {}
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance("좋아요! 이 목소리로 코칭할게요. 무릎은 발끝 방향으로, 천천히 앉아요."); applyVoice(u, 1.05, 1.05);
+  setTimeout(() => speechSynthesis.speak(u), 120);
+}
+$("voiceTry").addEventListener("click", tryVoice);
+document.querySelector('.seg[data-key="vtone"]').addEventListener("click", e => { if (e.target.closest("button")) tryVoice(); }); bindSeg("strict"); bindSeg("wmode"); bindSeg("useRef");
 document.querySelector('.seg[data-key="wmode"]').addEventListener("click", () => { if (phase === "idle" || phase === "done") renderPicker(); });
 renderPicker();
 
@@ -2221,7 +2268,7 @@ function drawDemo(P, D, focus, t) {
 let demo = null; const demoSeen = new Set();
 function demoSay(t) {
   if (!t || settings.mode !== "voice" || !("speechSynthesis" in window)) return;
-  try { const u = new SpeechSynthesisUtterance(t); u.lang = "ko-KR"; if (koVoice) u.voice = koVoice; u.rate = 1.1; u.pitch = 1.05; speechSynthesis.speak(u); } catch (x) {}
+  try { const u = new SpeechSynthesisUtterance(t); applyVoice(u, 1.1, 1.05); speechSynthesis.speak(u); } catch (x) {}
 }
 function withDemo(next) {
   if (guideMode() === "beg" && !demoSeen.has(ex.id) && DEMO_POSE[ex.id] && DEMO_TXT[ex.id]) runDemo(next); else next();
