@@ -211,12 +211,15 @@
   function standalone() { return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true; }
   function maybeInstallHint() {
     if (standalone()) return;
-    var ui = read(UI_KEY, {}); if (ui.installHideUntil && Date.now() < ui.installHideUntil) return;
+    var ui = read(UI_KEY, {}); ui.visits = (ui.visits || 0) + 1; write(UI_KEY, ui);
+    if (ui.visits < 3) return; // 처음 두 번은 보여주지 않음
+    if (ui.installHideUntil && Date.now() < ui.installHideUntil) return;
     var ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     var el = document.createElement("div"); el.className = "install"; el.setAttribute("role", "note");
     el.innerHTML = "<b>앱처럼 쓰려면 홈 화면에 추가하세요</b>" + (ios ? "사파리 아래쪽(또는 위쪽)의 공유 버튼을 누르고 ‘홈 화면에 추가’를 고르면 돼요." : "브라우저 메뉴에서 ‘앱 설치’ 또는 ‘홈 화면에 추가’를 고르면 돼요.") + '<button aria-label="닫기">×</button>';
     el.querySelector("button").addEventListener("click", function () { el.remove(); ui.installHideUntil = Date.now() + 3 * 864e5; write(UI_KEY, ui); });
     document.body.appendChild(el);
+    setTimeout(function () { if (el.parentNode) el.remove(); }, 9000);
   }
 
   // ===== 시작 =====
