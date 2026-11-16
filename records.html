@@ -375,6 +375,9 @@
   .brand{gap:10px}
   .hud-count b{color:#fff}
   [hidden]{display:none!important}
+
+  .gchip{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:7px;color:#fff;font-size:13px;font-weight:900;margin-right:8px;vertical-align:1px;background:#3557F5}
+  .gchip.g-S{background:linear-gradient(135deg,#3557F5,#7B5CFF)} .gchip.g-B{background:#17B26A} .gchip.g-C{background:#F79009} .gchip.g-D{background:#F04438}
 </style>
 </head>
 <body>
@@ -557,11 +560,14 @@ function demoLog() {
   return out;
 }
 
-const GROUPS = ["하체", "가슴", "등", "어깨", "팔", "코어"];
+const GROUPS = ["하체", "가슴", "등", "어깨", "팔", "코어", "유산소"];
 const COLORS = ["#DCE1E7", "#B8E6CF", "#5FC896", "#1FA971"];
 const level = n => n <= 0 ? 0 : n <= 3 ? 1 : n <= 8 ? 2 : 3;
 const ERR_KO = { depth: "덜 앉음", range: "가동 범위 부족", lean: "상체 숙임", knees: "무릎 모임", sag: "허리 처짐", pike: "엉덩이 들림",
-  kneeBend: "무릎 과하게 굽힘", archback: "허리 꺾임", tooHigh: "팔 너무 높이 듦", swing: "반동 사용", standUp: "상체 세움" };
+  kneeBend: "무릎 과하게 굽힘", archback: "허리 꺾임", tooHigh: "팔 너무 높이 듦", swing: "반동 사용", standUp: "상체 세움",
+  swingBack: "상체 젖힘", kip: "몸 흔들기", elbowDrift: "팔꿈치 움직임", squatty: "엉덩이 너무 낮춤", tooFast: "너무 빠름", uneven: "양팔 높이 차이",
+  refDepth: "모범 동작보다 얕음", refLean: "모범 동작보다 상체 흔들림", refShape: "모범 동작과 다름",
+  noLockout: "끝까지 안 폄", head: "고개 떨굼", unevenLeg: "다리 좌우 쏠림", fastDown: "내릴 때 너무 빠름" };
 const HELLO = {
   gs: { none: "오늘은 운동 안 했나! 엉덩이 무겁데이!", did: p => `오늘 ${p} 했네, 잘했데이!`, streak: n => `${n}일 연속이다, 억수로 장하데이!` },
   jl: { none: "오늘은 운동 안 했냐! 엉덩이 무겁다잉!", did: p => `오늘 ${p} 했구먼, 잘했다잉!`, streak: n => `${n}일 연속이여, 겁나게 장하다잉!` },
@@ -642,7 +648,7 @@ function render(log, isDemo) {
   $("recent").innerHTML = recent.length ? recent.map(s => {
     let r = 0, g = 0, n = 0; s.items.forEach(it => it.sets.forEach(st => { n++; r += st.good + st.bad; g += st.good; }));
     const dt = new Date(s.start), when = s.date === today ? "오늘" : `${dt.getMonth() + 1}월 ${dt.getDate()}일`;
-    return `<li><b>${s.routine || s.items.map(i => i.name).join(", ")}</b><em>${r ? Math.round(g / r * 100) + "%" : "–"}</em><small>${when}, ${Math.max(1, Math.round(s.durationSec / 60))}분, ${s.items.length}가지 ${n}세트${r ? `, ${r}회` : ""}</small></li>`;
+    return `<li><b>${s.grade ? `<span class="gchip g-${s.grade}">${s.grade}</span>` : ""}${s.routine || s.items.map(i => i.name).join(", ")}</b><em>${r ? Math.round(g / r * 100) + "%" : "–"}</em><small>${when}, ${Math.max(1, Math.round(s.durationSec / 60))}분, ${s.items.length}가지 ${n}세트${r ? `, ${r}회` : ""}</small></li>`;
   }).join("") : `<li><b>아직 운동 기록이 없어요</b><small>운동 화면에서 루틴을 끝내면 여기에 쌓여요.</small></li>`;
 
   // 종목별

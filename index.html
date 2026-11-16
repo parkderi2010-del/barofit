@@ -347,6 +347,60 @@
   .brand{gap:10px}
   .hud-count b{color:#fff}
   [hidden]{display:none!important}
+
+  .hud-count .hud-ref{font-size:clamp(13px,2vw,16px);margin-top:4px;opacity:.92}
+  .ref-box{margin-top:12px;padding:12px;border-radius:12px;background:#fff}
+  .ref-head{display:flex;justify-content:space-between;align-items:center}
+  .ref-head b{display:inline;font-size:15px;margin:0}
+  .ref-head span{font-size:12.5px;font-weight:700;color:var(--ink-2);background:var(--paper);border-radius:8px;padding:3px 8px}
+  .ref-head span.ok{color:#0D7A4A;background:#E8F7EF}
+  .ref-box p{margin:8px 0 10px;font-size:13px;color:var(--ink-2);line-height:1.55}
+  .ref-actions{display:flex;gap:8px}
+  .ref-actions .btn{min-height:42px;padding:9px 14px;font-size:14px}
+
+  .fb{margin:18px 0 6px;padding:18px;border-radius:20px;background:var(--paper)}
+  .fb-head{display:flex;gap:14px;align-items:center}
+  .fb-head b{font-size:17px;font-weight:900;letter-spacing:-.3px}
+  .fb-head p{margin:3px 0 0;font-size:14px;color:var(--ink-2);line-height:1.5}
+  .fb-grade{width:56px;height:56px;flex:none;border-radius:16px;display:grid;place-items:center;font-size:30px;font-weight:900;color:#fff;background:var(--level)}
+  .fb-grade.g-S{background:linear-gradient(135deg,#3557F5,#7B5CFF)} .fb-grade.g-A{background:#3557F5} .fb-grade.g-B{background:#17B26A}
+  .fb-grade.g-C{background:#F79009} .fb-grade.g-D{background:#F04438}
+  .fb-sec{margin-top:16px}
+  .fb-sec h4{margin:0 0 8px;font-size:14px;font-weight:800}
+  .fb-sec ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+  .fb-sec li{position:relative;padding:10px 12px 10px 36px;border-radius:12px;background:#fff;font-size:14.5px;line-height:1.55;font-weight:600}
+  .fb-sec li::before{position:absolute;left:12px;top:10px;font-weight:900}
+  .fb-sec li.ok::before{content:"✓";color:#17B26A}
+  .fb-sec li.up::before{content:"↑";color:#F79009}
+  .fb-sec li small{display:block;margin-top:4px;font-size:13px;font-weight:500;color:var(--ink-2)}
+  .fb-next{margin-top:14px;padding:12px 14px;border-radius:12px;background:#EEF2FF;color:#2443D6;font-size:14.5px;font-weight:700;line-height:1.5}
+  .fb-next b{display:block;font-size:12.5px;margin-bottom:2px}
+
+  .routine-ai{background:linear-gradient(135deg,#3557F5,#6B4CFF);color:#fff}
+  .routine-ai p{opacity:.9}
+  .rec{margin-top:8px}
+  .rec-title{font-size:18px;font-weight:900;letter-spacing:-.4px}
+  .rec-q{margin:16px 0 8px;font-size:14px;font-weight:800}
+  .rec-q small{font-weight:600;color:var(--ink-2);margin-left:6px}
+  .rchips{display:flex;flex-wrap:wrap;gap:8px}
+  .rchip{border:0;border-radius:999px;padding:9px 14px;min-height:40px;font:inherit;font-size:14px;font-weight:700;background:var(--paper);color:var(--ink);cursor:pointer}
+  .rchip.on{background:var(--level);color:#fff}
+  .rec-err{margin-top:14px;padding:12px 14px;border-radius:12px;background:#FDECEC;color:#9B1C1F;font-size:14px;line-height:1.5}
+  .rec-out{margin-top:16px;padding:16px;border-radius:18px;background:var(--paper)}
+  .rec-out-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .rec-out-head b{font-size:16px} .rec-out-head span{font-size:13px;font-weight:700;color:var(--ink-2);white-space:nowrap}
+  .rec-out ol{margin:12px 0 0;padding:0;list-style:none;counter-reset:n;display:grid;gap:8px}
+  .rec-out ol > li{counter-increment:n;display:grid;grid-template-columns:28px 1fr;column-gap:8px;padding:10px 12px;border-radius:12px;background:#fff}
+  .rec-out ol > li::before{content:counter(n);grid-row:span 2;width:24px;height:24px;border-radius:8px;background:#EEF2FF;color:#2443D6;font-size:12.5px;font-weight:900;display:grid;place-items:center}
+  .rec-out ol > li b{font-size:14.5px} .rec-out ol > li span{font-size:13px;color:var(--ink-2)}
+  .rec-why{margin-top:12px;font-size:13.5px;line-height:1.6}
+  .rec-why b{display:block;font-size:14px;margin-bottom:4px}
+  .rec-why ul{margin:0;padding-left:18px;color:var(--ink-2);list-style:disc}
+  .rec-why li{margin:2px 0}
+
+  .view-chip{position:absolute;right:14px;top:14px;z-index:2;padding:7px 12px;border-radius:999px;background:rgba(22,24,29,.62);color:#fff;font-size:12.5px;font-weight:700;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+  .view-chip[hidden]{display:none}
+  .cam .toast.show{white-space:normal;max-width:calc(100% - 28px)}
 </style>
 </head>
 <body>
@@ -369,8 +423,8 @@
         <p>카메라를 켜고, 운동할 때 머리부터 발끝까지 화면에 들어오게 휴대폰을 세워 두세요.</p>
       </div>
       <div class="badge" id="badge"><i></i><span id="badgeText">대기 중</span></div>
-      <div class="hud-timer" id="hudTimer"></div>
-      <div class="hud-count" id="hudCount"><b id="repNow">0</b><small id="repGoal">/ 10</small><span id="setNow">1세트 / 3세트</span></div>
+      <div class="hud-timer" id="hudTimer"></div><div class="view-chip" id="viewChip" hidden></div>
+      <div class="hud-count" id="hudCount"><b id="repNow">0</b><small id="repGoal">/ 10</small><span id="setNow">1세트 / 3세트</span><span id="refNow" class="hud-ref"></span></div>
       <div class="hud-big" id="hudBig"></div>
       <div class="cam-edge" id="camEdge"></div>
       <div class="toast" id="toast"></div>
@@ -393,6 +447,7 @@
         <div class="report-avatar" id="reportAvatar"></div>
         <p class="report-quote" id="reportQuote"></p>
       </div>
+      <div class="fb" id="feedback"></div>
       <ul class="report-list" id="reportList"></ul>
       <div class="sets-row" id="reportSets"></div>
       <div class="actions"><button class="btn btn-primary" id="againBtn">다시 하기</button><a class="btn link-btn" href="records.html">내 기록 보기</a><a class="btn link-btn" href="shop.html">단백질 챙기기</a></div>
@@ -425,6 +480,11 @@
           <div class="field-label">판정 기준</div>
           <div class="seg" data-key="strict"><button data-val="easy">너그럽게</button><button data-val="normal">보통</button><button data-val="hard">엄격하게</button></div>
           <div class="field-note">너그럽게는 운동을 처음 하는 분, 엄격하게는 정확한 자세를 연습하는 분께 맞아요.</div>
+        </div>
+        <div>
+          <div class="field-label">모범 동작과 비교</div>
+          <div class="seg" data-key="useRef"><button data-val="on">켜기</button><button data-val="off">끄기</button></div>
+          <div class="field-note">모범 동작을 등록한 운동은 매 회 일치도를 알려줘요.</div>
         </div>
       </div>
     </details>
@@ -474,7 +534,7 @@ const WASM_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VER}
 const MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
 
 // ===== 설정 (앉은 자세 화면과 같은 저장 공간을 써서 사투리·알림 방식이 이어짐) =====
-const DEFAULTS = { persona: "coach", mode: "voice", dialect: "gs", strict: "normal", exercise: "squat", reps: 10, sets: 3, rest: 60, holdSec: 30, wmode: "routine", routineId: "begin" };
+const DEFAULTS = { persona: "coach", mode: "voice", dialect: "gs", strict: "normal", exercise: "squat", reps: 10, sets: 3, rest: 60, holdSec: 30, wmode: "routine", routineId: "begin", useRef: "on" };
 let settings = { ...DEFAULTS };
 try { Object.assign(settings, JSON.parse(localStorage.getItem("barofit") || "{}")); } catch (e) {}
 const saveSettings = () => {
@@ -520,7 +580,7 @@ const EXERCISES = [
     metric: "elbow", dir: "down", start: 140, deep: 95, end: 150, partial: "range",
     pose: m => m.lean > 55,
     rules: [] },
-  { id: "press", name: "숄더 프레스", group: "어깨", need: ["shoulder", "elbow", "wrist"],
+  { id: "press", name: "숄더 프레스 (바벨·덤벨)", group: "어깨", need: ["shoulder", "elbow", "wrist"],
     view: "휴대폰을 앞이나 대각선 앞에 세워, 상체와 팔 전체가 보이게 하세요.",
     cue: "어깨 높이에서 머리 위로 팔이 다 펴질 때까지 밀어 올려요.",
     metric: "elbow", dir: "up", start: 115, deep: 155, end: 100, partial: "range",
@@ -532,7 +592,7 @@ const EXERCISES = [
     metric: "abd", dir: "up", start: 35, deep: 70, end: 25, partial: "range",
     pose: m => m.lean < 45,
     rules: [{ err: "tooHigh", when: s => s.max.abd > 112 }] },
-  { id: "curl", name: "바이셉 컬", group: "팔", need: ["shoulder", "elbow", "wrist"],
+  { id: "curl", name: "바이셉 컬 (덤벨·바벨)", group: "팔", need: ["shoulder", "elbow", "wrist"],
     view: "휴대폰을 옆이나 대각선 앞에 세워, 상체와 팔이 보이게 하세요.",
     cue: "팔꿈치를 몸통에 붙인 채 손을 어깨 쪽으로 끝까지 말아 올려요.",
     metric: "elbow", dir: "down", start: 130, deep: 65, end: 145, partial: "range",
@@ -544,15 +604,135 @@ const EXERCISES = [
     metric: "elbow", dir: "down", start: 140, deep: 95, end: 150, partial: "range",
     pose: m => m.lean > 25 && m.lean < 85,
     rules: [{ err: "standUp", when: s => s.min.lean < 22 }] },
+  // ── 많이 하는 헬스 종목 추가 ──
+  { id: "latpull", name: "랫풀다운", group: "등", need: ["shoulder", "elbow", "wrist"], sym: true, minRepSec: 0.6,
+    view: "휴대폰을 정면이나 대각선 앞 2m 거리에 세워, 상체와 양팔이 모두 보이게 하세요.",
+    cue: "가슴을 펴고 바를 쇄골 쪽으로 당겨요. 팔꿈치를 옆구리 쪽으로 끌어내리는 느낌으로 해요.",
+    metric: "elbow", dir: "down", start: 135, deep: 85, end: 150, partial: "range",
+    pose: m => m.wristUp > 0.05,
+    rules: [{ err: "swingBack", when: s => s.max.lean - s.startLean > 20 }] },
+  { id: "pullup", name: "풀업 (턱걸이)", group: "등", need: ["shoulder", "elbow", "wrist"], sym: true, minRepSec: 0.6,
+    view: "휴대폰을 정면 2~3m 거리에 세워, 매달린 몸 전체가 보이게 하세요.",
+    cue: "팔을 다 편 상태에서 시작해 턱이 바 위로 올라올 때까지 당겨요. 다리를 흔들지 마세요.",
+    metric: "elbow", dir: "down", start: 140, deep: 85, end: 150, partial: "range",
+    pose: m => m.wristUp > 0.1 && m.lean < 40,
+    rules: [{ err: "kip", when: s => s.max.lean - s.min.lean > 20 }] },
+  { id: "dbrow", name: "원암 덤벨 로우", group: "등", need: ["shoulder", "elbow", "wrist", "hip"], minRepSec: 0.6,
+    view: "휴대폰을 정확히 옆쪽에 세워, 상체와 팔이 보이게 하세요.",
+    cue: "벤치에 한 손과 무릎을 대고 등을 평평하게 한 채, 덤벨을 골반 쪽으로 당겨요.",
+    metric: "elbowMin", dir: "down", start: 140, deep: 95, end: 150, partial: "range",
+    pose: m => m.lean > 30 && m.lean < 90,
+    rules: [{ err: "standUp", when: s => s.min.lean < 22 }] },
+  { id: "hammer", name: "해머 컬", group: "팔", need: ["shoulder", "elbow", "wrist"], minRepSec: 0.6,
+    view: "휴대폰을 옆이나 대각선 앞에 세워, 상체와 팔이 보이게 하세요.",
+    cue: "엄지가 위로 가게 덤벨을 세워 쥐고, 팔꿈치를 고정한 채 들어 올려요. 한 팔씩 번갈아 해도 돼요.",
+    metric: "elbowMin", dir: "down", start: 130, deep: 65, end: 145, partial: "range",
+    pose: m => m.lean < 45,
+    rules: [{ err: "swing", when: s => s.max.upperArmMax > 35 || s.max.lean - s.min.lean > 15 }] },
+  { id: "ohext", name: "오버헤드 트라이셉 익스텐션", group: "팔", need: ["shoulder", "elbow", "wrist"], minRepSec: 0.6,
+    view: "휴대폰을 옆이나 대각선에 세워, 상체와 팔 전체가 보이게 하세요.",
+    cue: "덤벨을 머리 뒤로 내렸다가 팔꿈치를 끝까지 펴며 들어 올려요. 위팔은 귀 옆에 고정해요.",
+    metric: "elbow", dir: "up", start: 100, deep: 150, end: 85, partial: "range",
+    pose: m => m.upperArm > 135,
+    rules: [{ err: "elbowDrift", when: s => s.min.upperArm < 125 }] },
+  { id: "pushdown", name: "트라이셉 푸시다운", group: "팔", need: ["shoulder", "elbow", "wrist"], minRepSec: 0.55,
+    view: "휴대폰을 옆쪽에 세워, 상체와 팔이 보이게 하세요.",
+    cue: "팔꿈치를 옆구리에 붙인 채, 케이블을 아래로 밀어 팔을 끝까지 펴요.",
+    metric: "elbow", dir: "up", start: 105, deep: 155, end: 90, partial: "range",
+    pose: m => m.upperArm < 35,
+    rules: [{ err: "elbowDrift", when: s => s.max.upperArm > 30 }] },
+  { id: "frontraise", name: "프론트 레이즈", group: "어깨", need: ["shoulder", "elbow", "hip"], minRepSec: 0.6,
+    view: "휴대폰을 옆이나 대각선에 세워, 상체와 팔이 보이게 하세요.",
+    cue: "팔을 앞으로 어깨 높이까지 들었다가 천천히 내려요. 몸을 흔들지 마세요.",
+    metric: "abd", dir: "up", start: 35, deep: 75, end: 25, partial: "range",
+    pose: m => m.lean < 45,
+    rules: [{ err: "tooHigh", when: s => s.max.abd > 112 }, { err: "swing", when: s => s.max.lean - s.min.lean > 12 }] },
+  { id: "legpress", name: "레그 프레스", group: "하체", need: ["hip", "knee", "ankle"], minRepSec: 0.6,
+    view: "휴대폰을 기계 옆쪽에 세워, 엉덩이부터 발까지 보이게 하세요.",
+    cue: "무릎이 90도 정도 될 때까지 내렸다가, 무릎을 완전히 잠그지 않을 만큼 밀어요.",
+    metric: "knee", dir: "down", start: 140, deep: 95, end: 155, partial: "depth",
+    pose: m => m.hip < 135,
+    rules: [{ err: "knees", when: s => s.min.valgus != null && s.min.valgus < 0.72 }] },
+  { id: "legext", name: "레그 익스텐션", group: "하체", need: ["hip", "knee", "ankle"], minRepSec: 0.6,
+    view: "휴대폰을 기계 옆쪽에 세워, 허벅지와 정강이가 보이게 하세요.",
+    cue: "등을 기댄 채 무릎을 끝까지 펴고, 천천히 내려요.",
+    metric: "knee", dir: "up", start: 115, deep: 160, end: 100, partial: "range",
+    pose: m => m.hip < 125,
+    rules: [] },
+  { id: "hipthrust", name: "힙 쓰러스트", group: "하체", need: ["shoulder", "hip", "knee"], minRepSec: 0.6,
+    view: "휴대폰을 옆쪽 바닥에 세워, 어깨부터 무릎까지 보이게 하세요.",
+    cue: "등 윗부분을 벤치에 대고, 어깨부터 무릎까지 일자가 될 때까지 엉덩이를 들어 올려요.",
+    metric: "hip", dir: "up", start: 140, deep: 166, end: 135, partial: "range",
+    pose: m => m.lean > 45,
+    rules: [] },
+  { id: "deadlift", name: "데드리프트", group: "하체", need: ["shoulder", "hip", "knee"], minRepSec: 0.7,
+    view: "휴대폰을 정확히 옆쪽 2~3m 거리에 세워, 전신이 보이게 하세요.",
+    cue: "바를 정강이 가까이 두고, 허리를 곧게 편 채 엉덩이와 무릎을 함께 펴며 일어나요.",
+    metric: "hip", dir: "down", start: 150, deep: 110, end: 168, partial: "range",
+    pose: m => m.lean < 35,
+    rules: [{ err: "squatty", when: s => s.min.knee < 90 }] },
+  { id: "dips", name: "딥스", group: "가슴", need: ["shoulder", "elbow", "wrist"], sym: true, minRepSec: 0.6,
+    view: "휴대폰을 옆쪽에 세워, 상체와 팔이 보이게 하세요.",
+    cue: "팔을 편 상태에서 팔꿈치가 90도가 될 때까지 내려갔다가 밀어 올라와요.",
+    metric: "elbow", dir: "down", start: 140, deep: 95, end: 150, partial: "range",
+    pose: m => m.wristUp < -0.15 && m.lean < 55,
+    rules: [] },
+  { id: "jjack", name: "점핑잭", group: "유산소", need: ["shoulder", "elbow", "hip"],
+    view: "휴대폰을 정면 2~3m 거리에 세워, 전신이 보이게 하세요.",
+    cue: "팔을 머리 위로 올리며 다리를 벌리고, 다시 모아요. 가볍게 리듬을 타요.",
+    metric: "abd", dir: "up", start: 70, deep: 140, end: 45, partial: "range",
+    pose: m => m.lean < 30,
+    rules: [] },
   { id: "plank", name: "플랭크", group: "코어", need: ["shoulder", "hip", "ankle"], hold: true,
     view: "휴대폰을 옆쪽 바닥에 1.5~2m 거리로 세워, 머리부터 발끝까지 보이게 하세요.",
     cue: "팔꿈치를 어깨 아래에 두고, 머리부터 발끝까지 일자로 버텨요.",
     pose: m => m.lean > 55 }
 ];
-const GROUPS = ["하체", "가슴", "등", "어깨", "팔", "코어"];
+// ── 전신 판정 설정 ──
+// lock: 매 회 시작 전에 끝까지 폈는지(락아웃), neck: 고개 떨굼, legSym: 다리 좌우 쏠림, trunk: 몸통 흔들림 허용 각도
+const DETAIL = {
+  squat:    { lock: { metric: "knee", min: 165, say: "일어날 때 무릎과 엉덩이를 끝까지 펴 주세요." }, neck: true, legSym: true },
+  lunge:    { lock: { metric: "kneeMin", min: 160, say: "올라올 때 다리를 끝까지 펴 주세요." }, neck: true },
+  rdl:      { lock: { metric: "hip", min: 168, say: "올라올 때 엉덩이를 끝까지 밀어 몸을 쭉 펴 주세요." }, neck: true, legSym: true },
+  deadlift: { lock: { metric: "hip", min: 170, say: "맨 위에서 엉덩이와 무릎을 끝까지 펴고 바로 서 주세요." }, neck: true, legSym: true },
+  legpress: { lock: { metric: "knee", min: 158, say: "밀 때 다리를 거의 끝까지 펴 주세요. 무릎을 완전히 잠그지는 마세요." }, legSym: true },
+  hipthrust:{ legSym: true },
+  pushup:   { lock: { metric: "elbow", min: 160, say: "팔을 끝까지 펴고 다음 회를 시작해 주세요." }, neck: true },
+  bench:    { lock: { metric: "elbow", min: 160, say: "바를 밀 때 팔을 끝까지 펴 주세요." } },
+  dips:     { lock: { metric: "elbow", min: 160, say: "올라올 때 팔을 끝까지 펴 주세요." } },
+  row:      { lock: { metric: "elbow", min: 155, say: "내릴 때 팔을 끝까지 펴서 등을 늘려 주세요." }, neck: true },
+  dbrow:    { lock: { metric: "elbowMin", min: 155, say: "내릴 때 팔을 끝까지 펴서 등을 늘려 주세요." }, neck: true },
+  latpull:  { lock: { metric: "elbow", min: 155, say: "올릴 때 팔을 위로 끝까지 펴서 등을 늘려 주세요." } },
+  pullup:   { lock: { metric: "elbow", min: 158, say: "내려올 때 팔을 끝까지 펴고 매달린 자세에서 시작해 주세요." } },
+  curl:     { lock: { metric: "elbow", min: 155, say: "내릴 때 팔을 끝까지 펴 주세요." }, trunk: 12 },
+  hammer:   { lock: { metric: "elbowMin", min: 155, say: "내릴 때 팔을 끝까지 펴 주세요." }, trunk: 12 },
+  press:    { trunk: 15 }, raise: { trunk: 12 }, frontraise: { trunk: 12 }, pushdown: { trunk: 12 }, ohext: { trunk: 12 }
+};
+// ── 추천용 정보 ── type: 복합(compound)/고립(isolation)/코어/유산소, lv: 난이도, eq: 필요한 장비 조합(하나만 맞으면 됨)
+const META = {
+  squat: { type: "compound", lv: 1, eq: [["none"]] }, lunge: { type: "compound", lv: 1, eq: [["none"]] },
+  rdl: { type: "compound", lv: 2, eq: [["db"], ["bb"]] }, legpress: { type: "compound", lv: 1, eq: [["gym"]] },
+  legext: { type: "isolation", lv: 1, eq: [["gym"]] }, hipthrust: { type: "compound", lv: 1, eq: [["none"]] },
+  deadlift: { type: "compound", lv: 3, eq: [["bb"]] }, pushup: { type: "compound", lv: 1, eq: [["none"]] },
+  bench: { type: "compound", lv: 2, eq: [["bb", "gym"]] }, dips: { type: "compound", lv: 3, eq: [["gym"]] },
+  row: { type: "compound", lv: 2, eq: [["bb"], ["db"]] }, latpull: { type: "compound", lv: 1, eq: [["gym"]] },
+  pullup: { type: "compound", lv: 3, eq: [["gym"]] }, dbrow: { type: "compound", lv: 1, eq: [["db"]] },
+  press: { type: "compound", lv: 2, eq: [["db"], ["bb"]] }, raise: { type: "isolation", lv: 1, eq: [["db"]] },
+  frontraise: { type: "isolation", lv: 1, eq: [["db"]] }, curl: { type: "isolation", lv: 1, eq: [["db"], ["bb"]] },
+  hammer: { type: "isolation", lv: 1, eq: [["db"]] }, ohext: { type: "isolation", lv: 1, eq: [["db"]] },
+  pushdown: { type: "isolation", lv: 1, eq: [["gym"]] }, plank: { type: "core", lv: 1, eq: [["none"]] },
+  jjack: { type: "cardio", lv: 1, eq: [["none"]] }
+};
+EXERCISES.forEach(e => { Object.assign(e, DETAIL[e.id] || {}); e.meta = META[e.id]; });
+const GROUPS = ["하체", "가슴", "등", "어깨", "팔", "코어", "유산소"];
 const exById = id => EXERCISES.find(e => e.id === id) || EXERCISES[0];
 const ERR_KO = { depth: "덜 앉음", range: "가동 범위 부족", lean: "상체 숙임", knees: "무릎 모임", sag: "허리 처짐", pike: "엉덩이 들림",
-  kneeBend: "무릎 과하게 굽힘", archback: "허리 꺾임", tooHigh: "팔 너무 높이 듦", swing: "반동 사용", standUp: "상체 세움" };
+  kneeBend: "무릎 과하게 굽힘", archback: "허리 꺾임", tooHigh: "팔 너무 높이 듦", swing: "반동 사용", standUp: "상체 세움",
+  swingBack: "상체 젖힘", kip: "몸 흔들기", elbowDrift: "팔꿈치 움직임", squatty: "엉덩이 너무 낮춤", tooFast: "너무 빠름", uneven: "양팔 높이 차이",
+  refDepth: "모범 동작보다 얕음", refLean: "모범 동작보다 상체 흔들림", refShape: "모범 동작과 다름",
+  noLockout: "끝까지 안 폄", head: "고개 떨굼", unevenLeg: "다리 좌우 쏠림", fastDown: "내릴 때 너무 빠름" };
+// 안내 우선순서: 다칠 수 있는 실수 → 동작 완성도 → 속도
+const ERR_ORDER = ["sag", "knees", "lean", "head", "unevenLeg", "squatty", "kneeBend", "noLockout", "standUp", "swingBack", "kip", "uneven", "elbowDrift", "swing", "archback", "pike", "tooHigh", "fastDown", "tooFast", "refDepth", "refLean", "refShape"];
 
 // ===== 헬스 루틴 =====
 // reps: 한 세트 횟수, hold: 버티는 시간(초), sets: 세트 수
@@ -561,7 +741,11 @@ const ROUTINES = [
   { id: "legs", name: "하체 데이", desc: "허벅지와 엉덩이에 집중해요.", items: [{ ex: "squat", reps: 12, sets: 4 }, { ex: "lunge", reps: 10, sets: 3 }, { ex: "rdl", reps: 10, sets: 3 }, { ex: "plank", hold: 40, sets: 2 }] },
   { id: "upper", name: "상체 데이", desc: "가슴, 등, 어깨, 팔을 골고루 해요.", items: [{ ex: "pushup", reps: 12, sets: 3 }, { ex: "row", reps: 10, sets: 3 }, { ex: "press", reps: 10, sets: 3 }, { ex: "raise", reps: 12, sets: 3 }, { ex: "curl", reps: 12, sets: 3 }] },
   { id: "chest", name: "가슴과 팔", desc: "헬스장에서 벤치를 쓸 수 있을 때 좋아요.", items: [{ ex: "bench", reps: 10, sets: 4 }, { ex: "pushup", reps: 12, sets: 3 }, { ex: "curl", reps: 12, sets: 3 }] },
-  { id: "quick", name: "10분 순삭", desc: "바쁜 날 짧고 굵게 끝내요.", items: [{ ex: "squat", reps: 15, sets: 2 }, { ex: "pushup", reps: 10, sets: 2 }, { ex: "plank", hold: 45, sets: 2 }] }
+  { id: "quick", name: "10분 순삭", desc: "바쁜 날 짧고 굵게 끝내요.", items: [{ ex: "squat", reps: 15, sets: 2 }, { ex: "pushup", reps: 10, sets: 2 }, { ex: "plank", hold: 45, sets: 2 }] },
+  { id: "back", name: "등·이두 데이", desc: "랫풀다운과 덤벨로 등과 팔을 채워요.", items: [{ ex: "latpull", reps: 12, sets: 4 }, { ex: "dbrow", reps: 10, sets: 3 }, { ex: "curl", reps: 12, sets: 3 }, { ex: "hammer", reps: 12, sets: 3 }] },
+  { id: "shoulder", name: "어깨·삼두 데이", desc: "어깨 세 방향과 삼두를 골고루 해요.", items: [{ ex: "press", reps: 10, sets: 4 }, { ex: "raise", reps: 12, sets: 3 }, { ex: "frontraise", reps: 12, sets: 3 }, { ex: "pushdown", reps: 12, sets: 3 }, { ex: "ohext", reps: 12, sets: 3 }] },
+  { id: "legmachine", name: "하체 머신 데이", desc: "헬스장 하체 기구로 안전하게 해요.", items: [{ ex: "legpress", reps: 12, sets: 4 }, { ex: "legext", reps: 15, sets: 3 }, { ex: "hipthrust", reps: 12, sets: 3 }, { ex: "rdl", reps: 10, sets: 3 }] },
+  { id: "cardio", name: "홈 유산소 10분", desc: "기구 없이 땀 빼는 짧은 루틴이에요.", items: [{ ex: "jjack", reps: 30, sets: 3 }, { ex: "squat", reps: 15, sets: 2 }, { ex: "plank", hold: 30, sets: 2 }] }
 ];
 // 내가 만든 루틴 (이 기기에 저장)
 const MY_KEY = "barofit-myroutines";
@@ -570,7 +754,114 @@ const saveMine = list => { try { localStorage.setItem(MY_KEY, JSON.stringify(lis
 const allRoutines = () => ROUTINES.concat(myRoutines());
 const routineById = id => allRoutines().find(r => r.id === id) || ROUTINES[0];
 let draft = null; // 만들고 있는 루틴
-const routineMinutes = r => Math.round(r.items.reduce((a, it) => a + it.sets * ((it.hold || it.reps * 3) + settings.rest), 0) / 60);
+
+// ===== AI 추천 루틴 =====
+// 운동 과학 원칙(목표별 횟수·세트·휴식, 큰 근육 먼저, 워밍업)과 내 기록(최근에 쓴 부위, 자세가 약한 종목, 지난 운동)을 함께 반영해요.
+let recUI = null; // { result, seed }
+const PART_MAP = { "상체": ["가슴", "등", "어깨", "팔"], "하체": ["하체"], "전신": ["하체", "가슴", "등", "어깨", "코어"], "가슴": ["가슴"], "등": ["등"], "어깨": ["어깨"], "팔": ["팔"], "코어": ["코어"], "유산소": ["유산소"] };
+const REC_GOALS = {
+  hyper: { name: "근육 키우기", comp: { reps: 10, sets: 4, rest: 90 }, iso: { reps: 12, sets: 3, rest: 60 }, hold: 40, why: "근육을 키우려면 8~12회를 3~4세트, 휴식 60~90초가 가장 효율적이에요." },
+  strength: { name: "힘 기르기", comp: { reps: 5, sets: 5, rest: 150 }, iso: { reps: 8, sets: 3, rest: 90 }, hold: 45, why: "힘을 기르려면 무거운 무게로 3~6회를 하고, 휴식을 2분 이상 충분히 가져가요." },
+  fat: { name: "체지방 감량", comp: { reps: 15, sets: 3, rest: 45 }, iso: { reps: 15, sets: 3, rest: 40 }, hold: 40, why: "체지방 감량은 휴식을 30~45초로 짧게 하고, 많이 움직이는 게 핵심이에요." },
+  endure: { name: "체력 기르기", comp: { reps: 18, sets: 2, rest: 45 }, iso: { reps: 20, sets: 2, rest: 40 }, hold: 45, why: "체력을 기르려면 가벼운 무게로 15~20회를 쉬는 시간 짧게 이어가요." }
+};
+const REC_LEVELS = { beg: { name: "초급", lv: 1, setAdj: -1, hold: -10 }, mid: { name: "중급", lv: 2, setAdj: 0, hold: 0 }, adv: { name: "상급", lv: 3, setAdj: 1, hold: 15 } };
+const REC_EQUIP = { none: "맨몸", db: "덤벨", bb: "바벨", gym: "헬스장 기구" };
+const REC_ORDER = ["하체", "등", "가슴", "어깨", "팔", "코어", "유산소"];
+function prng(seed) { let a = seed >>> 0; return () => { a += 0x6D2B79F5; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function estSec(it) { const e = exById(it.ex); return it.sets * ((it.hold || it.reps * (e.group === "유산소" ? 1.2 : 3.2)) + (it.rest || 60)) + 30; }
+function recommend(p, seed) {
+  const rnd = prng(seed), G = REC_GOALS[p.goal] || REC_GOALS.hyper, Lv = REC_LEVELS[p.level] || REC_LEVELS.beg;
+  const targets = [...new Set(p.parts.flatMap(x => PART_MAP[x] || []))];
+  const avail = new Set(["none", ...p.equip]);
+  const can = e => e.meta && e.meta.lv <= Lv.lv && e.meta.eq.some(c => c.every(x => avail.has(x)));
+  const hist = loadLog().filter(x => x.type === "workout"), notes = [];
+  const recent = {}; hist.filter(x => Date.now() - x.start < 36 * 3600e3).forEach(x => x.items.forEach(it => recent[it.group] = (recent[it.group] || 0) + it.sets.length));
+  const form = {}; hist.slice(-10).forEach(x => x.items.forEach(it => { let g = 0, t = 0; it.sets.forEach(st => { g += st.good; t += st.good + st.bad; }); if (t) { const o = form[it.ex] || (form[it.ex] = { g: 0, t: 0 }); o.g += g; o.t += t; } }));
+  const lastEx = new Set((hist[hist.length - 1] || { items: [] }).items.map(it => it.ex));
+  const pool = {};
+  targets.forEach(g => { pool[g] = EXERCISES.filter(e => e.group === g && can(e)).map(e => ({ e, w: (e.meta.type === "compound" ? 2 : e.meta.type === "core" ? 1.2 : 1) + rnd() * 0.9 - (lastEx.has(e.id) ? 0.6 : 0) })).sort((a, b) => b.w - a.w); });
+  const order = REC_ORDER.filter(g => targets.includes(g) && pool[g] && pool[g].length);
+  if (!order.length) return { error: "고른 장비와 수준으로 할 수 있는 운동이 없어요. 장비를 더 고르거나 수준을 올려 주세요." };
+  const budget = p.minutes * 60, items = [], weakNotes = [];
+  let used = 0;
+  const jj = exById("jjack");
+  if (p.minutes >= 15 && can(jj) && !targets.includes("유산소")) { const w = { ex: "jjack", reps: 20, sets: 1, rest: 20 }; items.push(w); used += estSec(w); notes.push("다치지 않게 점핑잭으로 가볍게 몸을 데우고 시작해요."); }
+  const rx = e => {
+    const base = e.meta.type === "compound" ? G.comp : G.iso;
+    if (e.hold) return { ex: e.id, hold: Math.max(20, G.hold + Lv.hold), sets: Lv.setAdj > 0 ? 3 : 2, rest: Math.min(60, base.rest) };
+    let sets = Math.min(5, Math.max(2, base.sets + Lv.setAdj)), reps = base.reps;
+    if ((recent[e.group] || 0) >= 6) sets = Math.max(2, sets - 1);
+    const f = form[e.id];
+    if (f && f.t >= 10 && f.g / f.t < 0.7) { reps = Math.max(5, Math.round(reps * 0.8)); weakNotes.push(`${josa(e.name, "은", "는")} 최근 바른 자세 비율이 ${Math.round(f.g / f.t * 100)}%라서 횟수를 줄였어요. 자세부터 잡아요.`); }
+    if (e.group === "유산소") reps = Math.round(reps * 2);
+    return { ex: e.id, reps, sets, rest: base.rest };
+  };
+  let rounds = 0, added = true;
+  const real = () => items.filter(x => x.ex !== "jjack").length;
+  while (added && used < budget && rounds < 10) {
+    added = false; rounds++;
+    for (const g of order) {
+      // 이 부위에서 남은 시간에 들어가는 운동을 찾고, 안 들어가면 세트를 줄여 맞춰 봄
+      for (let k = 0; k < pool[g].length; k++) {
+        const it = rx(pool[g][k].e);
+        while (used + estSec(it) > budget * 1.08 && it.sets > 2) it.sets--;
+        if (used + estSec(it) > budget * 1.08 && real() >= 2) continue;
+        pool[g].splice(k, 1); items.push(it); used += estSec(it); added = true; break;
+      }
+      if (used >= budget) break;
+    }
+  }
+  // 고른 부위의 운동 종류가 적어 시간이 남으면 세트를 늘림
+  let grew = false;
+  for (let pass = 0; pass < 3 && used < budget * 0.8; pass++) {
+    for (const it of items) {
+      const grp = exById(it.ex).group, cap = { beg: 3, mid: 4, adv: 5 }[p.level] || 4;
+      if (it.ex === "jjack" || it.sets >= cap || (recent[grp] || 0) >= 6) continue; // 회복 중인 부위와 수준별 최대 세트는 넘기지 않음
+      const extra = estSec({ ...it, sets: 1 }) - 30;
+      if (used + extra > budget * 1.05) continue;
+      it.sets++; used += extra; grew = true;
+    }
+  }
+  if (!items.some(x => x.ex !== "jjack")) return { error: "시간이 너무 짧아요. 시간을 늘려 주세요." };
+  const lvNote = { beg: "초급이라 동작이 쉽고 안전한 운동 위주로 골랐어요.", mid: "중급 수준에 맞게 복합 운동과 고립 운동을 섞었어요.", adv: "상급 수준이라 난도 높은 운동과 세트 수를 더했어요." }[p.level];
+  notes.push(G.why, "큰 근육을 함께 쓰는 복합 운동을 먼저, 작은 근육 운동은 뒤에 배치했어요.", lvNote);
+  Object.keys(recent).filter(g => targets.includes(g) && recent[g] >= 6).forEach(g => notes.push(`최근에 ${g} 운동을 많이 해서, 회복을 위해 ${g} 세트를 하나씩 줄였어요.`));
+  weakNotes.slice(0, 2).forEach(n => notes.push(n));
+  if (grew) notes.push("고른 부위에서 할 수 있는 운동 종류가 적어서, 대신 세트 수를 늘려 시간을 채웠어요.");
+  if (used < budget * 0.7) notes.push(`고른 장비로 할 수 있는 운동이 적어 약 ${Math.round(used / 60)}분 루틴이 됐어요. 장비를 더 고르면 더 다양해져요.`);
+  if ([...lastEx].length) notes.push("지난 운동과 겹치지 않게 다른 종목을 먼저 넣었어요.");
+  const name = `AI 추천: ${p.parts.join("·")} ${G.name}`;
+  return { routine: { id: "ai-" + Date.now(), name, desc: `${Lv.name}, ${p.minutes}분, ${p.equip.length ? p.equip.map(k => REC_EQUIP[k]).join("·") : "맨몸"}`, mine: true, ai: true, rest: G.comp.rest, items }, notes, minutes: Math.round(used / 60) };
+}
+const recPrefs = () => Object.assign({ parts: ["상체"], goal: "hyper", level: "beg", minutes: 30, equip: ["db"] }, settings.recPrefs || {});
+function renderRec() {
+  const p = recPrefs(), chip = (k, v, label, on) => `<button class="rchip${on ? " on" : ""}" data-rk="${k}" data-rv="${v}" aria-pressed="${on}">${label}</button>`;
+  const res = recUI.result;
+  $("routines").innerHTML = `<div class="rec">
+    <div class="rec-title">AI 추천 루틴</div>
+    <div class="rec-q">어디를 운동할까요? <small>여러 개 고를 수 있어요</small></div>
+    <div class="rchips">${Object.keys(PART_MAP).map(x => chip("parts", x, x, p.parts.includes(x))).join("")}</div>
+    <div class="rec-q">목표</div>
+    <div class="rchips">${Object.keys(REC_GOALS).map(k => chip("goal", k, REC_GOALS[k].name, p.goal === k)).join("")}</div>
+    <div class="rec-q">운동 수준</div>
+    <div class="rchips">${Object.keys(REC_LEVELS).map(k => chip("level", k, REC_LEVELS[k].name, p.level === k)).join("")}</div>
+    <div class="rec-q">운동 시간</div>
+    <div class="rchips">${[15, 30, 45, 60].map(m => chip("minutes", m, m + "분", p.minutes === m)).join("")}</div>
+    <div class="rec-q">쓸 수 있는 장비 <small>맨몸 운동은 항상 포함돼요</small></div>
+    <div class="rchips">${["db", "bb", "gym"].map(k => chip("equip", k, REC_EQUIP[k], p.equip.includes(k))).join("")}</div>
+    <div class="actions"><button class="btn btn-primary" id="recGo" type="button">${res ? "다시 추천" : "AI 루틴 만들기"}</button><button class="btn btn-quiet" id="recClose" type="button">닫기</button></div>
+    ${res ? (res.error ? `<div class="rec-err">${res.error}</div>` : `
+      <div class="rec-out">
+        <div class="rec-out-head"><b>${res.routine.name}</b><span>약 ${res.minutes}분</span></div>
+        <ol>${res.routine.items.map(it => { const e = exById(it.ex); return `<li><b>${e.name}</b><span>${it.hold ? it.hold + "초" : it.reps + "회"} × ${it.sets}세트, 휴식 ${it.rest}초</span></li>`; }).join("")}</ol>
+        <div class="rec-why"><b>왜 이렇게 짰나요</b><ul>${res.notes.map(n => `<li>${n}</li>`).join("")}</ul></div>
+        <div class="actions"><button class="btn btn-primary" id="recUse" type="button">이 루틴으로 운동하기</button></div>
+      </div>`) : ""}
+  </div>`;
+  $("guide").innerHTML = `<b>AI 추천 루틴</b>부위, 목표, 수준, 시간, 장비를 고르면 운동 과학 원칙과 내 운동 기록을 함께 반영해 루틴을 짜드려요.<div class="cue">마음에 안 들면 ‘다시 추천’을 누르세요. 같은 조건에서도 다른 조합을 보여드려요.</div>`;
+}
+const routineMinutes = r => Math.round(r.items.reduce((a, it) => a + it.sets * ((it.hold || it.reps * 3) + (it.rest || r.rest || settings.rest)), 0) / 60);
 let routine = null;   // 진행 중인 루틴 { ...루틴, idx }
 let session = null;   // 이번 운동 기록
 function tgt() {
@@ -589,7 +880,9 @@ function saveLogEntry(entry) {
 function newSession() { return { type: "workout", start: Date.now(), date: dayStr(new Date()), routine: routine ? routine.name : null, items: [] }; }
 function closeExercise() {
   const sets = log.filter(l => l.good + l.bad + l.partial > 0 || l.hold > 0.5)
-    .map(l => ({ good: l.good, bad: l.bad, partial: l.partial, hold: Math.round(l.hold || 0), errors: l.errors }));
+    .map(l => ({ good: l.good, bad: l.bad, partial: l.partial, hold: Math.round(l.hold || 0), errors: l.errors,
+      score: l.scores && l.scores.length ? Math.round(l.scores.reduce((a, b) => a + b, 0) / l.scores.length) : null,
+      ref: l.refScores && l.refScores.length ? Math.round(l.refScores.reduce((a, b) => a + b, 0) / l.refScores.length) : null }));
   if (session && sets.length) session.items.push({ ex: ex.id, name: ex.name, group: ex.group, hold: !!ex.hold, target: tgt(), sets });
   log = [];
 }
@@ -597,6 +890,7 @@ function closeSession() {
   closeExercise();
   if (!session || !session.items.length) { session = null; return null; }
   session.end = Date.now(); session.durationSec = Math.round((session.end - session.start) / 1000);
+  try { const fb = buildFeedback(session); session.grade = fb.grade; session.score = fb.score; } catch (e) {}
   saveLogEntry(session); const s = session; session = null; return s;
 }
 
@@ -609,6 +903,13 @@ W.coach = {
   kneeBend: ["무릎은 살짝만 굽히고 엉덩이를 뒤로 빼 주세요."], archback: ["허리가 뒤로 꺾였어요. 배에 힘을 주고 밀어 주세요."],
   tooHigh: ["어깨 높이까지만 들어 주세요."], swing: ["반동 없이, 팔꿈치를 몸에 붙여 주세요."], standUp: ["상체를 숙인 채로 당겨 주세요."],
   lost: ["몸 전체가 화면에 보이게 서 주세요."], good: ["좋아요, 정확해요.", "자세 좋습니다."],
+  swingBack: ["상체를 뒤로 많이 젖혔어요. 가슴만 살짝 내밀고 당겨 주세요."], kip: ["몸이 흔들렸어요. 다리를 모으고 반동 없이 당겨 주세요."],
+  elbowDrift: ["팔꿈치가 움직였어요. 위팔을 고정한 채 해 주세요."], squatty: ["엉덩이를 너무 낮췄어요. 엉덩이를 뒤로 빼며 숙여 주세요."],
+  tooFast: ["너무 빨라요. 천천히 해 주세요. 올릴 때 1초, 내릴 때 2초예요."], uneven: ["양팔 높이가 달라요. 양쪽을 똑같이 움직여 주세요."],
+  refDepth: ["모범 동작만큼 깊게 움직여 주세요."], refLean: ["모범 동작보다 상체가 많이 움직였어요. 몸통을 고정해 주세요."],
+  refShape: ["모범 동작과 움직임이 달라요. 천천히 따라 해 보세요."],
+  noLockout: ["끝까지 펴고 다음 회를 시작해 주세요."], head: ["고개가 떨어졌어요. 시선을 앞쪽 바닥에 두고 목을 몸통과 일자로 맞춰 주세요."],
+  unevenLeg: ["한쪽으로 쏠렸어요. 양발에 체중을 똑같이 실어 주세요."], fastDown: ["내릴 때 너무 빨라요. 2초 동안 천천히 내려 주세요."],
   last3: ["세 개 남았어요."], last: ["마지막 한 개예요."], setDone: ["세트 완료! 잠깐 쉬어요."], allDone: ["오늘 운동 완료! 수고하셨어요."],
   restEnd: ["다시 시작할게요."], holdStart: ["시작! 그대로 버텨 주세요."], holdHalf: ["절반 지났어요. 조금만 더!"],
   report: { great: "오늘 자세가 정말 좋았어요. 이대로 꾸준히 해봐요.", ok: "좋은 운동이었어요. 자주 나온 실수만 고치면 더 좋아져요.", bad: "횟수보다 자세가 먼저예요. 다음엔 천천히 정확하게 해봐요." }
@@ -820,7 +1121,38 @@ function ang(a, b, c) {
 }
 const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, z: (a.z + b.z) / 2 });
 function vertAngle(v, down = false) { const len = Math.hypot(v.x, v.y, v.z) || 1e-6; return Math.acos(Math.max(-1, Math.min(1, (down ? v.y : -v.y) / len))) * 180 / Math.PI; }
-function metrics(w) {
+// ===== 정면 촬영 3D 보정 =====
+// 정면에서는 앞으로 숙이는 움직임이 카메라 쪽(깊이) 방향이라 잘 안 보여요.
+// 그래서 ① AI의 3D 추정 각도와 ② 화면 속 몸통이 짧아 보이는 정도(원근 축소)로 계산한 각도를 합쳐요.
+// ②의 기준(바로 섰을 때 몸통 길이 ÷ 어깨 너비)은 사용자가 바로 서 있을 때 자동으로 배워 이 기기에 저장해요.
+const BODY_KEY = "barofit-body";
+let bodyRatio = (() => { try { return JSON.parse(localStorage.getItem(BODY_KEY) || "{}").ratio || null; } catch (e) { return null; } })();
+let camView = "unknown", viewVotes = [], lastBodySave = 0;
+const viewTipShown = {};
+const SIDE_BEST = new Set(["rdl", "deadlift", "row", "dbrow", "hipthrust", "pushup", "plank", "bench", "legpress", "legext", "dips", "lunge"]);
+function frontCorrection(w, lm, lean3d) {
+  const ls = w[11], rs = w[12], dx = rs.x - ls.x, dz = rs.z - ls.z;
+  const frontness = Math.abs(dx) / (Math.hypot(dx, dz) || 1e-6);
+  viewVotes.push(frontness > 0.8 ? "front" : frontness < 0.45 ? "side" : "diag"); if (viewVotes.length > 30) viewVotes.shift();
+  const cnt = {}; viewVotes.forEach(x => cnt[x] = (cnt[x] || 0) + 1);
+  camView = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0];
+  if (!lm || camView === "side") return { lean: lean3d, leanFS: null };
+  const vis = i => lm[i] && (lm[i].visibility == null || lm[i].visibility > 0.5);
+  if (!(vis(11) && vis(12) && (vis(23) || vis(24)))) return { lean: lean3d, leanFS: null };
+  const Wd = video.videoWidth || 640, Hd = video.videoHeight || 480, P = i => ({ x: lm[i].x * Wd, y: lm[i].y * Hd });
+  const a = P(11), b = P(12), c = P(23), d = P(24);
+  const torso = Math.hypot((a.x + b.x - c.x - d.x) / 2, (a.y + b.y - c.y - d.y) / 2), shw = Math.hypot(a.x - b.x, a.y - b.y);
+  if (shw < 15) return { lean: lean3d, leanFS: null };
+  const ratio = torso * Math.max(frontness, 0.45) / shw; // 비스듬히 서면 어깨가 좁아 보이는 것까지 보정
+  if (lean3d < 18) {
+    bodyRatio = bodyRatio ? Math.max(bodyRatio * 0.9995, ratio) : ratio;
+    if (performance.now() - lastBodySave > 5000) { lastBodySave = performance.now(); try { localStorage.setItem(BODY_KEY, JSON.stringify({ ratio: bodyRatio })); } catch (e) {} }
+  }
+  if (!bodyRatio) return { lean: lean3d, leanFS: null };
+  const leanFS = Math.acos(Math.max(0, Math.min(1, ratio / bodyRatio))) * 180 / Math.PI;
+  return { lean: camView === "front" ? Math.max(lean3d, leanFS) : Math.max(lean3d, (lean3d + leanFS) / 2), leanFS };
+}
+function metrics(w, lm) {
   const S = i => w[i];
   const side = k => [S(L[k][0]), S(L[k][1])];
   const [ls, rs] = side("shoulder"), [le, re] = side("elbow"), [lw, rw] = side("wrist"), [lh, rh] = side("hip"), [lk, rk] = side("knee"), [la, ra] = side("ankle");
@@ -834,13 +1166,30 @@ function metrics(w) {
     knee: (kneeL + kneeR) / 2, kneeMin: Math.min(kneeL, kneeR),
     hip: (ang(ls, lh, lk) + ang(rs, rh, rk)) / 2,
     elbow: (ang(ls, le, lw) + ang(rs, re, rw)) / 2,
+    elbowMin: Math.min(ang(ls, le, lw), ang(rs, re, rw)),
+    kneeDiff: Math.abs(kneeL - kneeR),
+    neck: (() => { const er = mid(w[7], w[8]), u = { x: sh.x - hp.x, y: sh.y - hp.y, z: sh.z - hp.z }, v = { x: er.x - sh.x, y: er.y - sh.y, z: er.z - sh.z };
+      const d = u.x * v.x + u.y * v.y + u.z * v.z, m2 = Math.hypot(u.x, u.y, u.z) * Math.hypot(v.x, v.y, v.z) || 1e-6;
+      return Math.acos(Math.max(-1, Math.min(1, d / m2))) * 180 / Math.PI; })(),
+    elbowDiff: Math.abs(ang(ls, le, lw) - ang(rs, re, rw)),
+    wristUp: sh.y - (lw.y + rw.y) / 2,
     abd: (ang(lh, ls, le) + ang(rh, rs, re)) / 2,
     body: (ang(ls, lh, la) + ang(rs, rh, ra)) / 2,
-    lean: vertAngle({ x: sh.x - hp.x, y: sh.y - hp.y, z: sh.z - hp.z }),
+    ...(() => { const l3 = vertAngle({ x: sh.x - hp.x, y: sh.y - hp.y, z: sh.z - hp.z }), fc = frontCorrection(w, lm, l3); return { lean: fc.lean, lean3d: l3, leanFS: fc.leanFS }; })(),
     upperArm: (vertAngle({ x: le.x - ls.x, y: le.y - ls.y, z: le.z - ls.z }, true) + vertAngle({ x: re.x - rs.x, y: re.y - rs.y, z: re.z - rs.z }, true)) / 2,
+    upperArmMax: Math.max(vertAngle({ x: le.x - ls.x, y: le.y - ls.y, z: le.z - ls.z }, true), vertAngle({ x: re.x - rs.x, y: re.y - rs.y, z: re.z - rs.z }, true)),
     valgus: ankleDist > 0.15 ? kneeDist / ankleDist : null,
     sag
   };
+}
+let lastViewText = "";
+function updateViewChip() {
+  const t = camView === "front" ? "정면 촬영, 3D 보정 중" : camView === "diag" ? "대각선 촬영, 3D 보정 중" : camView === "side" ? "측면 촬영" : "";
+  if (t !== lastViewText) { lastViewText = t; const el = $("viewChip"); el.textContent = t; el.hidden = !t; }
+  if (camView === "front" && SIDE_BEST.has(ex.id) && !viewTipShown[ex.id] && viewVotes.length >= 30) {
+    viewTipShown[ex.id] = true;
+    showToast("정면에서도 3D 보정으로 숙임을 잡지만, 이 운동은 옆이나 대각선 45°에서 찍으면 훨씬 정확해요");
+  }
 }
 function visibleEnough(lm) {
   const v = i => (lm[i] && lm[i].visibility != null) ? lm[i].visibility : 0;
@@ -857,8 +1206,8 @@ function setBadge(text, cls = "") { $("badgeText").textContent = text; $("badge"
 function renderHud() {
   $("repNow").textContent = ex.hold ? Math.floor(holdTime) : repCount;
   const T = tgt();
-  $("repGoal").textContent = ex.hold ? `/ ${T.holdSec}초` : `/ ${T.reps}`;
-  $("setNow").textContent = routine ? `루틴 ${routine.idx + 1}/${routine.items.length} ${ex.name}, ${setNo}/${T.sets}세트` : `${setNo}세트 / ${T.sets}세트`;
+  $("repGoal").textContent = recording ? "/ 3" : ex.hold ? `/ ${T.holdSec}초` : `/ ${T.reps}`;
+  $("setNow").textContent = recording ? `${ex.name} 모범 동작 등록 중` : routine ? `루틴 ${routine.idx + 1}/${routine.items.length} ${ex.name}, ${setNo}/${T.sets}세트` : `${setNo}세트 / ${T.sets}세트`;
 }
 function bigText(html, ms) {
   const b = $("hudBig"); b.innerHTML = html; b.classList.add("show");
@@ -878,7 +1227,7 @@ function scold(key, sticker = "퍽!") {
   const now = performance.now(); if (now - lastSpeakErrAt < 2500) return;
   lastSpeakErrAt = now;
   errStreak[key] = (errStreak[key] || 0) + 1;
-  const Ln = wline(key);
+  const Ln = key === "noLockout" && ex.lock && ex.lock.say ? { id: "gen", t: ex.lock.say } : wline(key);
   showHalmae(Ln.t, { mood: "angry", slipper: errStreak[key] >= 3, sticker, ms: 2300 });
   if (errStreak[key] >= 3) errStreak[key] = 0;
   edgeFlash(900);
@@ -889,17 +1238,67 @@ function cheer(key, ms = 2200) {
   showHalmae(Ln.t, { mood: "happy", ms });
   if (settings.mode === "voice") speakHalmae(Ln.t);
 }
-function curLog() { return log[setNo - 1] || (log[setNo - 1] = { set: setNo, good: 0, bad: 0, partial: 0, hold: 0, errors: {} }); }
+function curLog() { return log[setNo - 1] || (log[setNo - 1] = { set: setNo, good: 0, bad: 0, partial: 0, hold: 0, errors: {}, scores: [], refScores: [] }); }
+
+// ===== 모범 동작 (전문가·트레이너 동작을 3회 녹화해 기준으로 삼기) =====
+const REF_KEY = "barofit-ref";
+const refs = () => { try { return JSON.parse(localStorage.getItem(REF_KEY) || "{}"); } catch (e) { return {}; } };
+const refFor = id => refs()[id] || null;
+let recording = null; // { reps: [] }
+let topPeak = null;     // 회와 회 사이에 가장 많이 편 각도
+function resample(samples, n = 20) {
+  const out = []; if (!samples || samples.length < 2) return out;
+  for (let i = 0; i < n; i++) {
+    const t = i * (samples.length - 1) / (n - 1), a = Math.floor(t), b = Math.min(samples.length - 1, a + 1), f = t - a;
+    out.push([samples[a][0] * (1 - f) + samples[b][0] * f, samples[a][1] * (1 - f) + samples[b][1] * f]);
+  }
+  return out;
+}
+function compareRef(e, r, tpl) {
+  const u = resample(r.samples); if (u.length !== tpl.metric.length) return null;
+  let dm = 0, dl = 0;
+  for (let i = 0; i < u.length; i++) { dm += Math.abs(u[i][0] - tpl.metric[i]); dl += Math.abs(u[i][1] - tpl.lean[i]); }
+  dm /= u.length; dl /= u.length;
+  const score = Math.round(Math.max(0, Math.min(100, 100 - dm * 1.5 - dl * 1.0)));
+  const ext = e.dir === "down" ? r.min[e.metric] : r.max[e.metric];
+  let cue = null;
+  if (e.dir === "down" ? ext - tpl.extreme > 12 : tpl.extreme - ext > 12) cue = "refDepth";
+  else if (r.max.lean - tpl.leanMax > 12) cue = "refLean";
+  else if (score < 65) cue = "refShape";
+  return { score, cue };
+}
+function startRecording() {
+  if (!camOn) { showToast("카메라를 먼저 켜 주세요"); return; }
+  if (ex.hold) { showToast("버티기 운동은 모범 동작을 등록하지 않아요"); return; }
+  if (phase === "active" || phase === "countdown" || phase === "rest") { showToast("운동 중에는 등록할 수 없어요"); return; }
+  routine = null; session = null; log = []; setNo = 1; repCount = 0; rep = null; sm = null;
+  recording = { reps: [] }; renderHud();
+  $("goBtn").hidden = true; $("endBtn").hidden = true; $("report").hidden = true;
+  window.__coach.show(`${ex.name} 모범 동작 3회를 가장 정확한 자세로 해 주세요.`, "happy", 3200);
+  setTimeout(() => startCountdown(() => { phase = "active"; repCount = 0; rep = null; renderHud(); }), 1500);
+}
+function finishRecording() {
+  const reps = recording.reps.filter(x => x.length === 20); recording = null;
+  phase = "idle"; $("goBtn").hidden = !camOn; renderHud();
+  if (reps.length < 2) { showToast("동작을 잘 읽지 못했어요. 다시 등록해 주세요"); renderPicker(); return; }
+  const metric = [], lean = [];
+  for (let i = 0; i < 20; i++) { metric.push(reps.reduce((a, r) => a + r[i][0], 0) / reps.length); lean.push(reps.reduce((a, r) => a + r[i][1], 0) / reps.length); }
+  const tpl = { metric, lean, extreme: ex.dir === "down" ? Math.min(...metric) : Math.max(...metric), leanMax: Math.max(...lean), at: Date.now(), reps: reps.length };
+  const all = refs(); all[ex.id] = tpl; try { localStorage.setItem(REF_KEY, JSON.stringify(all)); } catch (e) {}
+  window.__coach.show(`${ex.name} 모범 동작을 저장했어요. 이제 매 회 일치도를 알려드릴게요.`, "happy", 3500);
+  renderPicker();
+}
 
 // ===== 1회 판정 =====
 function updateRep(m, now) {
-  if (repCount >= tgt().reps) return; // 목표 횟수를 채우면 다음 세트 전까지 더 세지 않음
+  if (!recording && repCount >= tgt().reps) return; // 목표 횟수를 채우면 다음 세트 전까지 더 세지 않음
   const e = ex, v = m[e.metric], deep = deepFor(e);
   const inMove = e.dir === "down" ? v < e.start : v > e.start;
   const reached = e.dir === "down" ? v <= deep : v >= deep;
   const back = e.dir === "down" ? v >= e.end : v <= e.end;
   if (!rep) {
-    if (inMove && e.pose(m)) rep = { min: { ...m }, max: { ...m }, reached: false, startLean: m.lean, sagAtWorst: m.sag, worstBody: m.body, t0: now };
+    if (e.lock) topPeak = Math.max(topPeak == null ? -1e9 : topPeak, m[e.lock.metric]);
+    if (inMove && e.pose(m)) { rep = { min: { ...m }, max: { ...m }, reached: false, startLean: m.lean, sagAtWorst: m.sag, worstBody: m.body, t0: now, samples: [[v, m.lean]], preTop: topPeak, tReach: null }; topPeak = null; }
     return;
   }
   for (const k in m) {
@@ -908,14 +1307,48 @@ function updateRep(m, now) {
     if (rep.max[k] == null || m[k] > rep.max[k]) rep.max[k] = m[k];
   }
   if (m.body < rep.worstBody) { rep.worstBody = m.body; rep.sagAtWorst = m.sag; }
-  if (reached) rep.reached = true;
-  if (back) {
+  rep.samples.push([v, m.lean]);
+  if (reached) { if (!rep.reached) rep.tReach = now; rep.reached = true; }
+  // 바닥은 찍었는데 끝까지 돌아오지 않고 멈춘 경우 → 1.2초 뒤 그 회를 마무리하고 "끝까지" 안내
+  let forced = false;
+  if (!back && rep.reached && !recording) {
+    const near = e.dir === "down" ? v >= e.end - 25 : v <= e.end + 25;
+    if (near) { rep.nearSince = rep.nearSince || now; if (now - rep.nearSince > 1200) forced = true; } else rep.nearSince = null;
+  }
+  if (back || forced) {
     const r = rep; rep = null;
     if (now - r.t0 < 350) return; // 너무 짧은 흔들림은 무시
+    if (recording) {
+      if (!r.reached) { showToast("조금 더 크게 움직여 주세요"); return; }
+      recording.reps.push(resample(r.samples)); repCount++; renderHud(); sayCount(repCount);
+      if (recording.reps.length >= 3) setTimeout(finishRecording, 700);
+      return;
+    }
     const lg = curLog();
     if (!r.reached) { lg.partial++; lg.errors[e.partial] = (lg.errors[e.partial] || 0) + 1; goodStreak = 0; scold(e.partial, "에헴"); return; }
     repCount++;
     const errs = e.rules.filter(rule => rule.when(r)).map(rule => rule.err);
+    if (forced) errs.push(e.dir === "down" ? "noLockout" : "range");
+    const dur = (now - r.t0) / 1000, sf = { easy: 0.75, normal: 1, hard: 1.2 }[settings.strict] || 1;
+    const minSec = e.minRepSec != null ? e.minRepSec : (e.group === "유산소" ? 0 : 0.6);
+    // 내리는 구간(근육이 늘어나며 버티는 구간) 속도: down 운동은 시작→가장 깊은 곳, up 운동은 가장 높은 곳→끝
+    const down = r.tReach ? (e.dir === "down" ? (r.tReach - r.t0) : (now - r.tReach)) / 1000 : null;
+    if (minSec && down != null && down < 0.3 * sf) errs.push("fastDown");
+    else if (minSec && dur < minSec * sf) errs.push("tooFast");
+    // 끝까지 폈는지 (매 회 시작 전 가장 많이 편 각도)
+    if (e.lock && r.preTop != null && r.preTop > -1e8 && r.preTop < e.lock.min + ({ easy: -8, normal: 0, hard: 3 }[settings.strict] || 0)) errs.push("noLockout");
+    // 고개 떨굼, 다리 쏠림, 몸통 흔들림
+    if (e.neck && r.max.neck > ({ easy: 62, normal: 55, hard: 48 }[settings.strict] || 55)) errs.push("head");
+    if (e.legSym && r.max.kneeDiff > ({ easy: 30, normal: 22, hard: 16 }[settings.strict] || 22)) errs.push("unevenLeg");
+    if (e.trunk && r.max.lean - r.min.lean > e.trunk * ({ easy: 1.3, normal: 1, hard: 0.8 }[settings.strict] || 1) && !errs.includes("swing") && !errs.includes("swingBack") && !errs.includes("kip")) errs.push("swing");
+    if (e.sym && r.max.elbowDiff > ({ easy: 35, normal: 28, hard: 22 }[settings.strict] || 28)) errs.push("uneven");
+    const tpl = settings.useRef !== "off" ? refFor(e.id) : null, cmp = tpl ? compareRef(e, r, tpl) : null;
+    if (cmp) { lg.refScores.push(cmp.score); if (cmp.cue && !errs.length) errs.push(cmp.cue); }
+    const rank = k => { const i = ERR_ORDER.indexOf(k); return i < 0 ? 99 : i; };
+    errs.sort((a, b) => rank(a) - rank(b));
+    let score = Math.max(0, 100 - 22 * errs.length); if (cmp) score = Math.round((score + cmp.score) / 2);
+    lg.scores.push(score);
+    $("refNow").textContent = `이번 동작 ${score}점, 템포 ${dur.toFixed(1)}초` + (cmp ? `, 모범 동작 일치도 ${cmp.score}%` : "");
     if (errs.length) { lg.bad++; errs.forEach(k => lg.errors[k] = (lg.errors[k] || 0) + 1); goodStreak = 0; }
     else { lg.good++; goodStreak++; }
     renderHud();
@@ -958,12 +1391,13 @@ function startCountdown(after) {
   tick();
 }
 function beginSet() {
-  repCount = 0; holdTime = 0; rep = null; holdHalfSaid = false; lastHoldTick = 0; errStreak = {}; goodStreak = 0; curLog();
+  repCount = 0; holdTime = 0; rep = null; topPeak = null; holdHalfSaid = false; lastHoldTick = 0; errStreak = {}; goodStreak = 0; curLog(); $("refNow").textContent = "";
   phase = "active"; renderHud();
   if (ex.hold) setTimeout(() => cheer("holdStart", 1500), 700);
 }
-function startRest(label, onEnd) {
-  phase = "rest"; let left = settings.rest;
+const restOf = it => (it && it.rest) || (routine && routine.rest) || settings.rest;
+function startRest(label, onEnd, sec) {
+  phase = "rest"; let left = sec != null ? sec : settings.rest;
   const tick = () => {
     if (phase !== "rest") return;
     if (left <= 0) { hideBig(); onEnd(); return; }
@@ -977,17 +1411,18 @@ function finishSet() {
   if (phase !== "active") return;
   if (setNo >= tgt().sets) { finishExercise(); return; }
   phase = "rest"; cheer("setDone", 2400);
-  startRest("쉬는 시간", () => { setNo++; renderHud(); cheer("restEnd", 1500); setTimeout(() => startCountdown(beginSet), 1600); });
+  startRest("쉬는 시간", () => { setNo++; renderHud(); cheer("restEnd", 1500); setTimeout(() => startCountdown(beginSet), 1600); }, routine ? restOf(routine.items[routine.idx]) : settings.rest);
 }
 const NEXT_LINE = { gs: n => `다음은 ${n}! 카메라 위치 맞차라!`, jl: n => `다음은 ${n}이여! 카메라 위치 맞춰야!`, sd: n => `다음은 ${n}! 카메라 위치 맞춰라!` };
 function finishExercise() {
   if (routine && routine.idx < routine.items.length - 1) {
+    const prevRest = restOf(routine.items[routine.idx]);
     closeExercise(); routine.idx++; ex = exById(routine.items[routine.idx].ex); setNo = 1; sm = null; rep = null;
     phase = "rest"; renderPicker(); renderHud();
     const t = isCoach() ? `다음은 ${ex.name}이에요. 카메라 위치를 확인해 주세요.` : (NEXT_LINE[settings.dialect] || NEXT_LINE.gs)(ex.name);
     showHalmae(t, { mood: "happy", ms: 2400 }); if (settings.mode === "voice") speakHalmae(t);
     setTimeout(() => showToast(ex.view), 2500);
-    startRest(`다음 운동: ${ex.name}`, () => startCountdown(beginSet));
+    startRest(`다음 운동: ${ex.name}`, () => startCountdown(beginSet), Math.max(prevRest, 45));
     return;
   }
   phase = "done"; cheer("allDone", 3000); setBadge("운동 끝");
@@ -995,11 +1430,140 @@ function finishExercise() {
   setTimeout(() => showReport(s), 1200);
   if (s && window.HM) HM.afterSession("workout", s);
 }
+
+// ===== 운동 후 코치 피드백 =====
+// 칭찬은 구체적으로, 지적은 숫자로 정확하게, 고치는 방법까지 함께.
+const TIPS = {
+  depth: "의자에 앉듯 엉덩이를 뒤로 빼면서, 허벅지가 바닥과 평행할 때까지 내려가 보세요.",
+  range: "무게를 한 단계 낮추더라도 끝까지 움직여 보세요. 근육은 무게보다 가동 범위에 더 크게 반응해요.",
+  lean: "가슴을 앞으로 내밀고 시선을 정면에 두면 상체가 덜 숙여져요.",
+  knees: "무릎을 발끝 방향으로 밀어낸다는 느낌으로 해 보세요.",
+  sag: "배꼽을 등 쪽으로 당기듯 배에 힘을 주면 허리가 처지지 않아요.",
+  pike: "엉덩이를 어깨와 발목을 잇는 일직선에 맞춰 보세요.",
+  kneeBend: "무릎은 살짝만 굽히고, 엉덩이를 뒤로 미는 데 집중하세요.",
+  archback: "갈비뼈를 내리고 엉덩이에 힘을 주면 허리가 덜 꺾여요.",
+  tooHigh: "어깨 높이에서 멈추면 어깨 부담은 줄고 자극은 그대로예요.",
+  swing: "무게를 조금 낮추고 팔꿈치를 옆구리에 고정해 보세요.",
+  standUp: "상체 각도는 그대로 두고 팔만 당긴다고 생각해 보세요.",
+  swingBack: "몸통은 고정하고 팔꿈치로 끌어내린다는 느낌으로 당겨 보세요.",
+  kip: "다리를 모으고 배에 힘을 줘서 몸이 흔들리지 않게 해 보세요.",
+  elbowDrift: "위팔은 고정하고 팔꿈치 아래만 움직인다고 생각해 보세요.",
+  squatty: "무릎보다 엉덩이를 먼저 뒤로 빼면서 숙여 보세요.",
+  tooFast: "올릴 때 1초, 내릴 때 2초로 천천히 해 보세요. 느릴수록 근육이 더 오래 일해요.",
+  uneven: "약한 쪽에 맞춰 무게를 정하고, 양팔을 같은 속도로 움직여 보세요.",
+  refDepth: "모범 동작만큼 깊게 내려가는 데 집중해 보세요. 무게를 낮추면 더 쉬워요.",
+  refLean: "몸통을 고정하고 움직이는 관절만 쓰는 연습을 해 보세요.",
+  refShape: "거울이나 화면을 보며 모범 동작의 속도와 궤적을 천천히 따라 해 보세요.",
+  noLockout: "매 회 시작 전에 관절을 끝까지 펴는 습관을 들이면 가동 범위가 넓어지고 근육이 더 많이 일해요.",
+  head: "시선을 1~2m 앞 바닥에 두면 목이 몸통과 일자로 유지돼요.",
+  unevenLeg: "양발 간격과 방향을 똑같이 맞추고, 발바닥 전체로 바닥을 민다고 생각해 보세요.",
+  fastDown: "내릴 때 속으로 ‘하나, 둘’을 세며 버텨 보세요. 근육은 내릴 때 가장 많이 자라요."
+};
+const GRADE = [
+  { min: 90, g: "S", say: "거의 완벽했어요." },
+  { min: 80, g: "A", say: "아주 좋았어요. 작은 부분만 다듬으면 돼요." },
+  { min: 70, g: "B", say: "좋았어요. 다만 고칠 점이 몇 가지 분명히 보여요." },
+  { min: 55, g: "C", say: "운동량은 괜찮았지만, 자세가 자주 무너졌어요." },
+  { min: 0, g: "D", say: "오늘은 자세보다 횟수에 쫓겼어요. 다음엔 천천히 정확하게 가 봐요." }
+];
+// 받침에 맞춰 을/를, 은/는 붙이기
+function josa(word, a, b) {
+  const w = String(word).replace(/\s*\(.*\)$/, ""), c = w.charCodeAt(w.length - 1);
+  const has = c >= 0xAC00 && c <= 0xD7A3 ? (c - 0xAC00) % 28 !== 0 : false;
+  return word + (has ? a : b);
+}
+function summarize(s) {
+  const per = s.items.map(it => {
+    const o = { ex: it.ex, name: it.name, hold: it.hold, target: it.target, reps: 0, good: 0, partial: 0, errors: {}, scores: [], refs: [], holds: [] };
+    it.sets.forEach(st => {
+      o.reps += st.good + st.bad; o.good += st.good; o.partial += st.partial;
+      for (const k in st.errors) o.errors[k] = (o.errors[k] || 0) + st.errors[k];
+      if (st.score != null) o.scores.push(st.score); if (st.ref != null) o.refs.push(st.ref); if (it.hold) o.holds.push(st.hold);
+    });
+    o.pct = o.reps ? Math.round(o.good / o.reps * 100) : null;
+    o.avgScore = o.scores.length ? Math.round(o.scores.reduce((a, b) => a + b, 0) / o.scores.length) : null;
+    o.avgRef = o.refs.length ? Math.round(o.refs.reduce((a, b) => a + b, 0) / o.refs.length) : null;
+    return o;
+  });
+  return per;
+}
+function overallScore(per) {
+  const sc = per.filter(p => p.avgScore != null).map(p => p.avgScore);
+  if (sc.length) return Math.round(sc.reduce((a, b) => a + b, 0) / sc.length);
+  const hp = per.filter(p => p.hold).map(p => Math.min(100, Math.round(p.holds.reduce((a, b) => a + b, 0) / Math.max(1, p.holds.length) / (p.target.holdSec || 30) * 100)));
+  const pc = per.filter(p => p.pct != null).map(p => p.pct).concat(hp);
+  return pc.length ? Math.round(pc.reduce((a, b) => a + b, 0) / pc.length) : 0;
+}
+const gradeOf = sc => GRADE.find(x => sc >= x.min);
+function lastTime(exId, beforeTs) {
+  const prev = loadLog().filter(e => e.type === "workout" && e.start < beforeTs).sort((a, b) => b.start - a.start);
+  for (const ses of prev) { const it = ses.items.find(i => i.ex === exId); if (it) return summarize({ items: [it] })[0]; }
+  return null;
+}
+function buildFeedback(s) {
+  const per = summarize(s), score = overallScore(per), G = gradeOf(score);
+  const good = [], fix = [];
+  // ── 잘한 점 ──
+  const best = per.filter(p => !p.hold && p.reps >= 6 && p.pct >= 85).sort((a, b) => b.pct - a.pct)[0];
+  if (best) good.push(`${best.name} ${best.reps}회 중 ${best.good}회(${best.pct}%)를 바른 자세로 했어요. 오늘 가장 정확했던 운동이에요.`);
+  per.forEach(p => {
+    const prev = lastTime(p.ex, s.start); if (!prev || p.hold) return;
+    if (prev.pct != null && p.pct != null && p.pct - prev.pct >= 5) good.push(`${p.name} 바른 자세 비율이 지난번 ${prev.pct}%에서 오늘 ${p.pct}%로 올랐어요.`);
+    else if (p.reps - prev.reps >= 3 && (p.pct == null || p.pct >= 70)) good.push(`${josa(p.name, "을", "를")} 지난번보다 ${p.reps - prev.reps}회 더 했어요.`);
+  });
+  const refBest = per.filter(p => p.avgRef != null && p.avgRef >= 85)[0];
+  if (refBest) good.push(`${josa(refBest.name, "은", "는")} 모범 동작과 ${refBest.avgRef}% 일치했어요. 동작이 몸에 붙고 있어요.`);
+  const holdOk = per.filter(p => p.hold && p.holds.length && p.holds.every(h => h >= (p.target.holdSec || 30)))[0];
+  if (holdOk) good.push(`${holdOk.name} 목표 ${holdOk.target.holdSec || 30}초를 모든 세트에서 버텼어요.`);
+  const totalPartial = per.reduce((a, p) => a + p.partial, 0), totalReps = per.reduce((a, p) => a + p.reps, 0);
+  if (!totalPartial && totalReps >= 10) good.push("덜 해서 빠진 동작이 한 번도 없었어요. 가동 범위를 끝까지 지켰어요.");
+  if (s.routine) good.push(`‘${s.routine}’ 루틴을 끝까지 마쳤어요. 끝까지 해낸 것 자체가 실력이에요.`);
+  if (!good.length) good.push("오늘도 운동을 시작했어요. 꾸준함이 가장 큰 실력이에요.");
+  // ── 고칠 점 (많이 나온 순서) ──
+  const errList = [];
+  per.forEach(p => { for (const k in p.errors) errList.push({ k, n: p.errors[k], name: p.name, reps: p.reps + p.partial }); });
+  errList.sort((a, b) => b.n - a.n).slice(0, 2).forEach(e => {
+    const rate = e.reps ? Math.round(e.n / e.reps * 100) : 0;
+    fix.push({ t: `${e.name}에서 ‘${ERR_KO[e.k] || e.k}’ 실수가 ${e.n}번 나왔어요${rate >= 30 ? `. 열 번 중 ${Math.round(rate / 10)}번꼴이에요` : ""}.`, tip: TIPS[e.k] || "" });
+  });
+  const weak = per.filter(p => !p.hold && p.reps >= 6 && p.pct != null && p.pct < 60).sort((a, b) => a.pct - b.pct)[0];
+  if (weak && fix.length < 3) fix.push({ t: `${weak.name} 바른 자세 비율이 ${weak.pct}%예요. 지금 무게나 횟수는 조금 버거운 상태예요.`, tip: "무게를 10~20% 낮추고, 바른 자세로 할 수 있는 횟수만 해 보세요. 자세가 잡히면 무게는 금방 다시 올라가요." });
+  per.forEach(p => {
+    if (fix.length >= 3 || p.hold) return;
+    const prev = lastTime(p.ex, s.start);
+    if (prev && prev.pct != null && p.pct != null && prev.pct - p.pct >= 10) fix.push({ t: `${p.name} 바른 자세 비율이 지난번 ${prev.pct}%보다 ${prev.pct - p.pct}%p 떨어졌어요.`, tip: "피곤한 날일 수 있어요. 컨디션이 안 좋으면 세트 수를 줄이고 자세에만 집중하는 것도 좋은 선택이에요." });
+  });
+  const holdShort = per.filter(p => p.hold && p.holds.some(h => h < (p.target.holdSec || 30)))[0];
+  if (holdShort && fix.length < 3) fix.push({ t: `${holdShort.name}에서 목표 ${holdShort.target.holdSec || 30}초를 못 채운 세트가 있었어요.`, tip: "목표를 10초 낮춰 모든 세트를 채운 뒤, 매주 5초씩 늘려 보세요." });
+  // ── 다음 목표 ──
+  let next;
+  if (errList.length) next = `다음 운동에서는 ${errList[0].name}의 ‘${ERR_KO[errList[0].k] || errList[0].k}’ 실수를 ${Math.max(0, Math.floor(errList[0].n / 2))}번 이하로 줄여 봐요.`;
+  else if (totalPartial) next = "다음 운동에서는 덜 해서 빠지는 동작 0회에 도전해 봐요.";
+  else if (score >= 90) next = settings.strict !== "hard" ? "자세가 아주 안정적이에요. 다음엔 판정 기준을 ‘엄격하게’로 올려 도전해 봐요." : "다음엔 세트마다 2회씩 늘려 봐요.";
+  else next = "다음 운동에서는 오늘보다 바른 자세 비율 5%p 올리기에 도전해 봐요.";
+  if (!fix.length) fix.push({ t: "눈에 띄는 실수가 거의 없었어요.", tip: "이제 무게나 횟수를 조금씩 늘릴 때예요." });
+  return { score, grade: G.g, headline: G.say, good: good.slice(0, 3), fix: fix.slice(0, 3), next };
+}
+function renderFeedback(s) {
+  const fb = buildFeedback(s);
+  $("feedback").innerHTML = `
+    <div class="fb-head"><div class="fb-grade g-${fb.grade}">${fb.grade}</div><div><b>오늘의 코치 피드백</b><p>${fb.headline} 종합 ${fb.score}점</p></div></div>
+    <div class="fb-sec"><h4>잘한 점</h4><ul>${fb.good.map(t => `<li class="ok">${t}</li>`).join("")}</ul></div>
+    <div class="fb-sec"><h4>고칠 점</h4><ul>${fb.fix.map(f => `<li class="up">${f.t}${f.tip ? `<small>${f.tip}</small>` : ""}</li>`).join("")}</ul></div>
+    <div class="fb-next"><b>다음 목표</b>${fb.next}</div>`;
+  if (settings.mode === "voice") setTimeout(() => {
+    const line = `오늘은 ${fb.grade} 등급이에요. ${fb.good[0]} 고칠 점은, ${fb.fix[0].t}`;
+    try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(line); u.lang = "ko-KR"; if (koVoice) u.voice = koVoice; u.rate = 1.05; speechSynthesis.speak(u); } catch (e) {}
+  }, 3400);
+  return fb;
+}
+
 function showReport(s) {
   if (!s) return;
-  let good = 0, bad = 0, part = 0, sets = 0, holdRatio = [], errs = {};
+  let good = 0, bad = 0, part = 0, sets = 0, holdRatio = [], errs = {}, scs = [], refsc = [];
   s.items.forEach(it => it.sets.forEach(st => {
     good += st.good; bad += st.bad; part += st.partial; sets++;
+    if (st.score != null) scs.push(st.score); if (st.ref != null) refsc.push(st.ref);
     if (it.hold) holdRatio.push(Math.min(1, st.hold / (it.target.holdSec || 30)));
     for (const k in st.errors) errs[k] = (errs[k] || 0) + st.errors[k];
   }));
@@ -1019,10 +1583,13 @@ function showReport(s) {
     (holdPct != null ? `<li><span>버티기 목표 달성</span><b>${holdPct}%</b></li>` : "") +
     (part ? `<li><span>덜 해서 안 쳐준 횟수</span><b>${part}회</b></li>` : "") +
     `<li><span>운동한 부위</span><b>${groups.join(", ")}</b></li>` +
+    (scs.length ? `<li><span>평균 동작 점수</span><b>${Math.round(scs.reduce((a, b) => a + b, 0) / scs.length)}점</b></li>` : "") +
+    (refsc.length ? `<li><span>모범 동작 일치도</span><b>${Math.round(refsc.reduce((a, b) => a + b, 0) / refsc.length)}%</b></li>` : "") +
     `<li><span>가장 많이 한 실수</span><b>${top ? ERR_KO[top] : "없음"}</b></li>`;
   $("reportSets").innerHTML = s.items.map(it => it.hold
     ? `<span>${it.name} ${it.sets.length}세트, 최고 ${Math.max(...it.sets.map(x => x.hold))}초</span>`
     : `<span>${it.name} ${it.sets.length}세트, ${it.sets.reduce((a, x) => a + x.good + x.bad, 0)}회</span>`).join("");
+  renderFeedback(s);
   $("report").hidden = false; $("report").scrollIntoView({ behavior: "smooth", block: "start" });
   $("goBtn").hidden = true; $("endBtn").hidden = true;
 }
@@ -1054,7 +1621,8 @@ function handle(res, now) {
     return;
   }
   visibleAt = now;
-  const m = metrics(wl);
+  const m = metrics(wl, lm);
+  updateViewChip();
   if (!sm) sm = { ...m }; else for (const k in m) sm[k] = (m[k] == null || sm[k] == null) ? m[k] : sm[k] * 0.45 + m[k] * 0.55;
   if (phase === "active") {
     if (ex.hold) updateHold(sm, now);
@@ -1075,7 +1643,7 @@ function loop() {
 // ===== 화면 구성 =====
 function routineCard(r) {
   return `<div class="routine-wrap"><button class="routine${r.id === settings.routineId ? " on" : ""}" data-id="${r.id}" aria-pressed="${r.id === settings.routineId}">
-    <b>${r.name}</b><em>약 ${routineMinutes(r)}분${r.mine ? ", 내 루틴" : ""}</em><p>${r.desc}</p>
+    <b>${r.name}</b><em>약 ${routineMinutes(r)}분${r.ai ? ", AI 추천" : r.mine ? ", 내 루틴" : ""}</em><p>${r.desc}</p>
     <p>${r.items.map(it => `${exById(it.ex).name} ${it.hold ? it.hold + "초" : it.reps + "회"}×${it.sets}`).join(", ")}</p></button>
     ${r.mine ? `<button class="routine-del" data-del="${r.id}" aria-label="${r.name} 삭제">삭제</button>` : ""}</div>`;
 }
@@ -1104,8 +1672,9 @@ function renderRoutines() {
   $("routines").hidden = !on; $("picker").hidden = on; $("steppers").style.display = on ? "none" : "";
   if (!on) return;
   if (draft) { renderBuilder(); return; }
+  if (recUI) { renderRec(); return; }
   const mine = myRoutines();
-  $("routines").innerHTML = ROUTINES.map(routineCard).join("") +
+  $("routines").innerHTML = `<button class="routine routine-ai" id="openRec" type="button"><b>AI 추천 루틴 만들기</b><p>부위, 목표, 시간, 장비를 고르면 나에게 맞는 루틴을 바로 짜드려요.</p></button>` + ROUTINES.map(routineCard).join("") +
     (mine.length ? `<div class="group-name" style="margin-top:16px">내 루틴</div>` + mine.map(routineCard).join("") : "") +
     `<button class="routine routine-new" id="newRoutine" type="button"><b>내 루틴 만들기</b><p>원하는 운동, 횟수, 세트를 골라 나만의 루틴을 저장해요.</p></button>`;
   const r = routineById(settings.routineId);
@@ -1113,6 +1682,23 @@ function renderRoutines() {
 }
 $("routines").addEventListener("click", e => {
   const busy = phase === "active" || phase === "countdown" || phase === "rest";
+  if (e.target.closest("#openRec")) { if (busy) { showToast("운동 중에는 만들 수 없어요"); return; } recUI = { result: null, seed: Date.now() % 100000 }; renderRec(); return; }
+  if (recUI) {
+    const c = e.target.closest(".rchip");
+    if (c) {
+      const p = recPrefs(), k = c.dataset.rk, v = c.dataset.rv;
+      if (k === "parts" || k === "equip") { const arr = p[k]; const i = arr.indexOf(v); if (i >= 0) { if (k === "equip" || arr.length > 1) arr.splice(i, 1); } else arr.push(v); }
+      else p[k] = k === "minutes" ? Number(v) : v;
+      settings.recPrefs = p; saveSettings(); renderRec(); return;
+    }
+    if (e.target.closest("#recGo")) { recUI.seed += 7919; recUI.result = recommend(recPrefs(), recUI.seed); renderRec(); setTimeout(() => { const o = document.querySelector(".rec-out, .rec-err"); o && o.scrollIntoView({ behavior: "smooth", block: "nearest" }); }, 50); return; }
+    if (e.target.closest("#recClose")) { recUI = null; renderRoutines(); return; }
+    if (e.target.closest("#recUse") && recUI.result && recUI.result.routine) {
+      const r = recUI.result.routine; saveMine(myRoutines().filter(x => !x.ai).concat(myRoutines().filter(x => x.ai).slice(-4), [r]));
+      settings.routineId = r.id; saveSettings(); recUI = null; renderRoutines(); showToast("AI 추천 루틴을 골랐어요. 운동 시작을 눌러 주세요"); return;
+    }
+    return;
+  }
   if (draft) {
     const rm = e.target.closest("[data-rm]");
     if (rm) { draft.items.splice(Number(rm.dataset.rm), 1); if (!draft.items.length) draft.items.push({ ex: "squat", reps: 10, sets: 3 }); renderBuilder(); return; }
@@ -1151,7 +1737,11 @@ function renderPicker() {
     const items = EXERCISES.filter(e => e.group === g);
     return `<div class="group"><div class="group-name">${g}</div><div class="chips">${items.map(e => `<button class="chip${e.id === ex.id ? " on" : ""}" data-id="${e.id}" aria-pressed="${e.id === ex.id}">${e.name}</button>`).join("")}</div></div>`;
   }).join("");
-  $("guide").innerHTML = `<b>${ex.name}</b>${ex.view}<div class="cue">${ex.cue}</div>`;
+  const tpl = refFor(ex.id), d = tpl ? new Date(tpl.at) : null;
+  $("guide").innerHTML = `<b>${ex.name}</b>${ex.view}<div class="cue">${ex.cue}</div>` + (ex.hold ? "" :
+    `<div class="ref-box"><div class="ref-head"><b>모범 동작</b><span class="${tpl ? "ok" : ""}">${tpl ? `등록됨, ${d.getMonth() + 1}월 ${d.getDate()}일` : "아직 없어요"}</span></div>
+     <p>트레이너나 운동을 잘하는 분이 가장 정확한 자세로 3회 하면, 그 동작을 기준으로 매 회 얼마나 비슷한지 점수를 알려줘요.</p>
+     <div class="ref-actions"><button class="btn" id="refRec" type="button">${tpl ? "다시 등록" : "모범 동작 등록"}</button>${tpl ? '<button class="btn btn-quiet" id="refDel" type="button">지우기</button>' : ""}</div></div>`);
   $("repsLabel").textContent = ex.hold ? "목표 시간" : "한 세트 횟수";
   $("repsOut").textContent = ex.hold ? `${settings.holdSec}초` : `${settings.reps}회`;
   $("setsOut").textContent = `${settings.sets}세트`;
@@ -1159,6 +1749,10 @@ function renderPicker() {
   renderHud();
   renderRoutines();
 }
+$("guide").addEventListener("click", e => {
+  if (e.target.closest("#refRec")) { startRecording(); return; }
+  if (e.target.closest("#refDel")) { const all = refs(); delete all[ex.id]; try { localStorage.setItem(REF_KEY, JSON.stringify(all)); } catch (er) {} renderPicker(); showToast("모범 동작을 지웠어요"); }
+});
 $("picker").addEventListener("click", e => {
   const b = e.target.closest(".chip"); if (!b) return;
   if (phase === "active" || phase === "countdown" || phase === "rest") { showToast("운동 중에는 바꿀 수 없어요"); return; }
@@ -1177,7 +1771,7 @@ function bindSeg(key) {
   wrap.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; settings[key] = b.dataset.val; saveSettings(); render(); });
   render();
 }
-bindSeg("mode"); bindSeg("strict"); bindSeg("wmode");
+bindSeg("mode"); bindSeg("strict"); bindSeg("wmode"); bindSeg("useRef");
 document.querySelector('.seg[data-key="wmode"]').addEventListener("click", () => { if (phase === "idle" || phase === "done") renderPicker(); });
 renderPicker();
 
@@ -1224,7 +1818,7 @@ $("endBtn").addEventListener("click", () => {
 $("againBtn").addEventListener("click", () => { $("report").hidden = true; phase = "idle"; $("goBtn").hidden = !camOn; $("camBtn").hidden = camOn; renderPicker(); });
 
 // 시험용 내부 접근
-window.__wk = { metrics, updateRep, updateHold, beginSet, finishSet, closeSession, loadLog, startRoutine: id => { routine = { ...routineById(id), idx: 0 }; ex = exById(routine.items[0].ex); session = newSession(); setNo = 1; log = []; }, get routine() { return routine; }, get ex() { return ex.id; }, get state() { return { phase, repCount, holdTime, setNo, log, errStreak }; }, setEx: id => { ex = exById(id); }, setPhase: p => phase = p };
+window.__wk = { frontCorrection, get camView() { return camView; }, get bodyRatio() { return bodyRatio; }, recommend, buildFeedback, showReport, metrics, updateRep, updateHold, beginSet, refFor, setRecording: on => { recording = on ? { reps: [] } : null; }, finishRecording, get recording() { return recording; }, finishSet, closeSession, loadLog, startRoutine: id => { routine = { ...routineById(id), idx: 0 }; ex = exById(routine.items[0].ex); session = newSession(); setNo = 1; log = []; }, get routine() { return routine; }, get ex() { return ex.id; }, get state() { return { phase, repCount, holdTime, setNo, log, errStreak }; }, setEx: id => { ex = exById(id); }, setPhase: p => phase = p };
 
 try { window.__coach && window.__coach.faces(m => halmaeSVG(m, true)); } catch (e) {}
 </script>
