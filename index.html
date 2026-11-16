@@ -129,6 +129,14 @@
   .demo-skip{display:none;position:absolute;top:12px;right:12px;z-index:4;height:38px;padding:0 16px;border:0;border-radius:999px;background:rgba(255,255,255,.92);color:#16181D;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
   .cam.demo-on .demo-skip{display:block}
   .cam:not(.live) .hud-count{display:none}
+  .disclaimer{margin-top:4px;font-size:12px;opacity:.85} .disclaimer a{color:inherit;font-weight:700}
+  .feel{margin-top:14px;padding:14px;border-radius:16px;background:var(--paper)} .feel b{display:block;font-size:15px;margin-bottom:10px}
+  .feel-warn{margin:10px 0 0;padding:12px;border-radius:12px;background:#FDECEC;color:#8A1C1C;font-size:13.5px;font-weight:700;line-height:1.55}
+  html[data-theme="dark"] .feel-warn{background:#3A1717;color:#FFC9C9}
+  .wk-rec{display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,0,0,.06);font-size:13.5px;font-weight:700}
+  .wk-rec span{flex:1;color:var(--ink-2)} .wk-rec b{color:var(--ink)}
+  .wk-rec button{border:0;border-radius:999px;padding:8px 12px;background:var(--ink);color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap}
+  html[data-theme="dark"] .wk-rec button{background:#F2F4F7;color:#16181D}
   /* 무게 */
   .kg-card{margin-top:12px;padding:12px 14px;border-radius:18px;background:var(--surface)}
   .kg-card[hidden]{display:none}
@@ -589,8 +597,9 @@
     <div class="error" id="errorBox" role="alert"></div>
     <p class="privacy">
       <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" style="flex:none;margin-top:2px"><rect x="2" y="6" width="10" height="7" rx="2" fill="#5B616B"/><path d="M4.5 6V4.5a2.5 2.5 0 015 0V6" stroke="#5B616B" stroke-width="1.6" fill="none"/></svg>
-      영상은 저장하거나 보내지 않아요. 이 기기 안에서 관절 위치만 분석해요.
+      영상은 저장하거나 서버로 보내지 않아요. 이 기기 안에서 관절 위치만 분석해요.
     </p>
+    <p class="privacy disclaimer">바로핏은 운동을 돕는 서비스예요. 의료 진단이나 치료를 대신하지 않고, 카메라 판정은 촬영 각도·조명에 따라 틀릴 수 있어요. <a href="privacy.html">개인정보·이용 안내</a></p>
   </section>
 
   <aside>
@@ -678,6 +687,11 @@
         <div>
           <div class="field-label">숫자·자막 크기</div>
           <div class="seg" data-key="bigtext"><button data-val="off">보통</button><button data-val="on">크게 (멀리서 볼 때)</button></div>
+        </div>
+        <div class="set-sec">내 데이터</div>
+        <div>
+          <div class="field-note" style="margin-top:0">운동 기록과 내 정보는 이 기기에만 저장돼요. 기기를 바꿀 땐 <a href="records.html#backup">기록 → 백업</a>으로 옮기세요. <a href="privacy.html">개인정보·이용 안내 보기</a></div>
+          <div class="voice-row" style="margin-top:8px"><button class="btn btn-quiet" id="wipeAll" type="button" style="color:var(--bad)">모든 데이터 지우기</button></div>
         </div>
         <div class="set-sec">안전 안내</div>
         <p class="field-note" style="margin-top:0">휴대폰 카메라 한 대로 판단하기 때문에, 기구에 몸이 가려지거나 너무 빠른 동작은 정확하지 않을 수 있어요. 무거운 무게를 들 때는 자세 알림을 참고만 하시고, 통증이 있으면 바로 멈추세요.</p>
@@ -1012,11 +1026,18 @@ function recommend(p, seed) {
   const can = e => e.meta && e.meta.lv <= Lv.lv && e.meta.eq.some(c => c.every(x => avail.has(x)));
   const hist = loadLog().filter(x => x.type === "workout"), notes = [];
   const recent = {}; hist.filter(x => Date.now() - x.start < 36 * 3600e3).forEach(x => x.items.forEach(it => recent[it.group] = (recent[it.group] || 0) + it.sets.length));
+  // 통증을 알린 부위는 4일 쉬게, 많이 힘들었다면 2일 동안 세트를 줄임
+  const painG = new Set(), hard = hist.some(x => x.feel === "hard" && Date.now() - x.start < 48 * 3600e3);
+  hist.filter(x => x.feel === "pain" && Date.now() - x.start < 96 * 3600e3).forEach(x => x.items.forEach(it => painG.add(it.group)));
   const form = {}; hist.slice(-10).forEach(x => x.items.forEach(it => { let g = 0, t = 0; it.sets.forEach(st => { g += st.good; t += st.good + st.bad; }); if (t) { const o = form[it.ex] || (form[it.ex] = { g: 0, t: 0 }); o.g += g; o.t += t; } }));
   const lastEx = new Set((hist[hist.length - 1] || { items: [] }).items.map(it => it.ex));
   const pool = {};
+  if (painG.size) notes.push(`최근 통증을 알려주신 부위(${[...painG].join(", ")})는 회복을 위해 이번엔 뺐어요. 통증이 계속되면 전문가와 상담하세요.`);
+  if (hard) notes.push("최근 많이 힘들었다고 하셔서 세트를 하나씩 줄였어요.");
+  targets.filter(g => painG.has(g)).forEach(g => targets.splice(targets.indexOf(g), 1));
   targets.forEach(g => { pool[g] = EXERCISES.filter(e => e.group === g && can(e)).map(e => ({ e, w: (e.meta.type === "compound" ? 2 : e.meta.type === "core" ? 1.2 : 1) + rnd() * 0.9 - (lastEx.has(e.id) ? 0.6 : 0) })).sort((a, b) => b.w - a.w); });
   const order = REC_ORDER.filter(g => targets.includes(g) && pool[g] && pool[g].length);
+  if (!targets.length && painG.size) return { error: "고른 부위가 모두 최근 통증을 알려주신 부위예요. 오늘은 쉬거나 다른 부위를 골라 주세요." };
   if (!order.length) return { error: "고른 장비와 수준으로 할 수 있는 운동이 없어요. 장비를 더 고르거나 수준을 올려 주세요." };
   const budget = p.minutes * 60, items = [], weakNotes = [];
   let used = 0;
@@ -1027,6 +1048,7 @@ function recommend(p, seed) {
     if (e.hold) return { ex: e.id, hold: Math.max(20, G.hold + Lv.hold), sets: Lv.setAdj > 0 ? 3 : 2, rest: Math.min(60, base.rest) };
     let sets = Math.min(5, Math.max(2, base.sets + Lv.setAdj)), reps = base.reps;
     if ((recent[e.group] || 0) >= 6) sets = Math.max(2, sets - 1);
+    if (hard) sets = Math.max(2, sets - 1);
     const f = form[e.id];
     if (f && f.t >= 10 && f.g / f.t < 0.7) { reps = Math.max(5, Math.round(reps * 0.8)); weakNotes.push(`${josa(e.name, "은", "는")} 최근 바른 자세 비율이 ${Math.round(f.g / f.t * 100)}%라서 횟수를 줄였어요. 자세부터 잡아요.`); }
     if (e.group === "유산소") reps = Math.round(reps * 2);
@@ -1119,7 +1141,8 @@ function closeExercise() {
   const sets = log.filter(l => l.good + l.bad + l.partial > 0 || l.hold > 0.5)
     .map(l => ({ good: l.good, bad: l.bad, partial: l.partial, hold: Math.round(l.hold || 0), errors: l.errors,
       score: l.scores && l.scores.length ? Math.round(l.scores.reduce((a, b) => a + b, 0) / l.scores.length) : null,
-      ref: l.refScores && l.refScores.length ? Math.round(l.refScores.reduce((a, b) => a + b, 0) / l.refScores.length) : null, kg: l.kg ?? null }));
+      ref: l.refScores && l.refScores.length ? Math.round(l.refScores.reduce((a, b) => a + b, 0) / l.refScores.length) : null, kg: l.kg ?? null,
+      conf: l.confs && l.confs.length ? Math.round(l.confs.reduce((a, b) => a + b, 0) / l.confs.length) : null, held: l.held || 0 }));
   if (session && sets.length) { session.items.push({ ex: ex.id, name: ex.name, group: ex.group, hold: !!ex.hold, target: tgt(), sets }); saveKgHistory(ex, sets, tgt()); }
   flushDiag();
   log = [];
@@ -1497,7 +1520,8 @@ function metrics(w, lm) {
 }
 let lastViewText = "";
 function updateViewChip() {
-  const t = camView === "front" ? "정면 촬영, 3D 보정 중" : camView === "diag" ? "대각선 촬영, 3D 보정 중" : camView === "side" ? "측면 촬영" : "";
+  const v = camView === "front" ? "정면 촬영" : camView === "diag" ? "대각선 촬영" : camView === "side" ? "측면 촬영" : "";
+  const t = v ? `${v} · 판정 신뢰도 ${confLabel(confNow)}` : "";
   if (t !== lastViewText) { lastViewText = t; const el = $("viewChip"); el.textContent = t; el.hidden = !t; }
   if (camView === "front" && SIDE_BEST.has(ex.id) && !viewTipShown[ex.id] && viewVotes.length >= 30) {
     viewTipShown[ex.id] = true;
@@ -1582,6 +1606,27 @@ function renderCap(m, now) {
     setCap(tw(2), bp >= 0.8 ? `거의 다 왔어요. ${P.fin} 1회예요` : `좋아요! 이제 ${P.b} · ${tempoTxt(2)}`, Math.max(0, bp));
   }
 }
+// ===== 판정 신뢰도 (0~1): 관절이 잘 보이는지 × 촬영 방향이 맞는지 × 조명이 충분한지 =====
+let confNow = 1, lumaNow = 255, darkCount = 0, lastLuma = 0, lastConfText = "";
+const lumaCanvas = document.createElement("canvas"); lumaCanvas.width = 32; lumaCanvas.height = 24;
+function sampleLuma(now) {
+  if (now - lastLuma < 1500 || !video.videoWidth) return; lastLuma = now;
+  try {
+    const c = lumaCanvas.getContext("2d", { willReadFrequently: true }); c.drawImage(video, 0, 0, 32, 24);
+    const d = c.getImageData(0, 0, 32, 24).data; let sum = 0; for (let i = 0; i < d.length; i += 4) sum += d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
+    lumaNow = sum / (d.length / 4);
+    if (lumaNow < 45) { if (++darkCount === 3 && phase !== "demo") showToast("조명이 어두워요. 밝은 곳에서 하면 판정이 더 정확해요"); } else darkCount = 0;
+  } catch (e) {}
+}
+function frameConf(lm) {
+  if (!lm) return 0;
+  const v = i => (lm[i] && lm[i].visibility != null) ? lm[i].visibility : 0;
+  const vis = ex.need.reduce((a, k) => a + Math.max(v(L[k][0]), v(L[k][1])), 0) / ex.need.length;
+  const view = SIDE_BEST.has(ex.id) && camView === "front" ? 0.75 : 1;
+  const light = lumaNow >= 70 ? 1 : lumaNow >= 45 ? 0.8 : 0.55;
+  return Math.max(0, Math.min(1, ((vis - 0.5) / 0.4) * view * light));
+}
+const confLabel = c => c >= 0.65 ? "높음" : c >= 0.4 ? "보통" : "낮음";
 function visibleEnough(lm) {
   const v = i => (lm[i] && lm[i].visibility != null) ? lm[i].visibility : 0;
   return ex.need.every(k => Math.max(v(L[k][0]), v(L[k][1])) > 0.5);
@@ -1723,6 +1768,7 @@ function updateRep(m, now) {
   if (m.body < rep.worstBody) { rep.worstBody = m.body; rep.sagAtWorst = m.sag; }
   rep.samples.push([v, m.lean]);
   rep.best = Math.max(rep.best || 0, depthPct(e, v));
+  rep.confSum = (rep.confSum || 0) + confNow; rep.confN = (rep.confN || 0) + 1;
   if (reached) { if (!rep.reached) rep.tReach = now; rep.reached = true; }
   // 바닥은 찍었는데 끝까지 돌아오지 않고 멈춘 경우 → 1.2초 뒤 그 회를 마무리하고 "끝까지" 안내
   let forced = false;
@@ -1741,6 +1787,11 @@ function updateRep(m, now) {
       return;
     }
     const lg = curLog();
+    const rc = r.confN ? r.confSum / r.confN : confNow;
+    if (rc < 0.25 && !recording) {
+      noteWhy("인식이 불안정해서 이번 동작은 세지 않았어요 · 몸 전체가 보이게, 밝은 곳에서 해 주세요", "", 4000);
+      pushDiag({ ex: e.id, held: "count", conf: Math.round(rc * 100) }); return;
+    }
     if (!r.reached) {
       lg.partial++; lg.errors[e.partial] = (lg.errors[e.partial] || 0) + 1; goodStreak = 0; partialRun++;
       pushDiag({ ex: e.id, ok: 0, best: Math.round((r.best || 0) * 100), lo: Math.round(r.min[e.metric]), hi: Math.round(r.max[e.metric]), lean: Math.round(r.max.lean) });
@@ -1775,10 +1826,15 @@ function updateRep(m, now) {
     const rank = k => { const i = ERR_ORDER.indexOf(k); return i < 0 ? 99 : i; };
     errs.sort((a, b) => rank(a) - rank(b));
     for (let i = errs.length - 1; i >= 0; i--) if (tuneOff(e.id, errs[i])) errs.splice(i, 1); // 사용자가 "틀린 지적"이라고 한 건 빼기
+    const heldForm = rc < 0.5 && !recording;
+    (lg.confs = lg.confs || []).push(Math.round(rc * 100));
+    if (heldForm) { // 자세가 맞다/틀리다 단정하지 않고 보류 (횟수는 인정)
+      errs.length = 0; lg.held = (lg.held || 0) + 1; pushDiag({ ex: e.id, held: "form", conf: Math.round(rc * 100) });
+    }
     if (errs.length) pushDiag({ ex: e.id, errs: errs.slice() });
     let score = Math.max(0, 100 - 22 * errs.length); if (cmp) score = Math.round((score + cmp.score) / 2);
-    lg.scores.push(score);
-    noteWhy(errs.length ? `${repCount}회 인정! 다음엔 ${ERR_KO[errs[0]] || "자세"} 주의` : `${repCount}회 인정! 좋은 자세예요`, errs.length ? "tip" : "ok", 1600);
+    if (!heldForm) lg.scores.push(score);
+    if (heldForm) noteWhy(`${repCount}회 인정 · 인식이 흔들려서 자세 판정은 보류했어요`, "tip", 2200); else noteWhy(errs.length ? `${repCount}회 인정! 다음엔 ${ERR_KO[errs[0]] || "자세"} 주의` : `${repCount}회 인정! 좋은 자세예요`, errs.length ? "tip" : "ok", 1600);
     $("refNow").textContent = `이번 동작 ${score}점, 템포 ${dur.toFixed(1)}초` + (cmp ? `, 모범 동작 일치도 ${cmp.score}%` : "");
     if (errs.length) { lg.bad++; errs.forEach(k => lg.errors[k] = (lg.errors[k] || 0) + 1); goodStreak = 0; }
     else { lg.good++; goodStreak++; }
@@ -2057,7 +2113,7 @@ function showReport(s) {
     s.items.filter(it => usesKg(exById(it.ex))).map(it => `<li><span>다음 ${it.name}</span><b>${kgText(kgAdvice(exById(it.ex)).kg)} 추천</b></li>`).join("");
   $("reportSets").innerHTML = s.items.map(it => it.hold
     ? `<span>${it.name} ${it.sets.length}세트, 최고 ${Math.max(...it.sets.map(x => x.hold))}초</span>`
-    : `<span>${it.name} ${it.sets.length}세트, ${it.sets.reduce((a, x) => a + x.good + x.bad, 0)}회${it.sets.some(x => x.kg) ? ` · ${kgText(Math.max(...it.sets.map(x => x.kg || 0)))}` : ""}</span>`).join("") + judgeHTML(s);
+    : `<span>${it.name} ${it.sets.length}세트, ${it.sets.reduce((a, x) => a + x.good + x.bad, 0)}회${it.sets.some(x => x.kg) ? ` · ${kgText(Math.max(...it.sets.map(x => x.kg || 0)))}` : ""}</span>`).join("") + feelHTML(s) + judgeHTML(s);
   renderFeedback(s);
   $("report").hidden = false; renderWeek(); $("report").scrollIntoView({ behavior: "smooth", block: "start" });
   $("goBtn").hidden = true; $("endBtn").hidden = true;
@@ -2246,6 +2302,7 @@ function handle(res, now) {
     return;
   }
   visibleAt = now; lostSince = 0;
+  sampleLuma(now); confNow = confNow * 0.8 + frameConf(lm) * 0.2;
   const m = metrics(wl, lm);
   updateViewChip();
   if (!sm) sm = { ...m }; else for (const k in m) sm[k] = (m[k] == null || sm[k] == null) ? m[k] : sm[k] * 0.45 + m[k] * 0.55;
@@ -2265,17 +2322,21 @@ function handle(res, now) {
       const close = ex.hold ? ready && sm.body >= 158 : ghostInfo && Math.abs(sm[ex.metric] - ghostInfo.theta) < 20;
       draw(lm, ex.hold ? { line: true, base: close ? C_GREEN : C_WHITE } : { ghost: pts => ghostPose(pts, ex, ghostInfo ? ghostInfo.theta : ex.end), base: ready && close ? C_GREEN : C_WHITE });
     } else {
-      const bad = liveErrors(sm, now);
-      draw(lm, { base: ready ? C_GREEN : C_WHITE, bad });
+      const lowConf = confNow < 0.4, bad = lowConf ? [] : liveErrors(sm, now);
+      draw(lm, { base: lowConf ? C_WHITE : ready ? C_GREEN : C_WHITE, bad });
     }
   } else { hideCap(); draw(lm, { base: C_WHITE }); if (phase === "idle") setBadge("준비됐어요. 운동 시작을 누르세요", "good"); }
 }
+let detectMs = 20;
 function loop() {
-  if (!camOn) return;
+  if (!camOn || document.visibilityState === "hidden") return;
   const now = performance.now();
-  if (landmarker && video.readyState >= 2 && now - lastDetect >= 60) {
-    lastDetect = now; let res = null;
+  const busy = phase === "active" || phase === "countdown" || recording;
+  const gap = phase === "demo" ? 1e9 : busy ? (detectMs > 45 ? 85 : 60) : 140; // 운동 중 약 16장/초, 쉬는 중·대기 중 7장/초
+  if (landmarker && video.readyState >= 2 && now - lastDetect >= gap) {
+    lastDetect = now; let res = null; const t0 = performance.now();
     try { res = landmarker.detectForVideo(video, now); } catch (e) { console.error(e); }
+    detectMs = detectMs * 0.9 + (performance.now() - t0) * 0.1;
     handle(res, now);
   }
   requestAnimationFrame(loop);
@@ -2778,12 +2839,30 @@ function renderTuneNote() {
   $("tuneNote").textContent = n ? `지금 ${n}개 운동의 기준을 내 몸에 맞게 조정해 뒀어요. 리포트에서 “판정이 틀렸어요”를 누르면 더 맞춰져요.` : "운동 리포트에서 “판정이 틀렸어요”를 누르면 그 운동의 기준을 내 몸에 맞게 조정해요.";
 }
 renderTuneNote();
+$("wipeAll").addEventListener("click", () => {
+  if (!confirm("운동 기록, 내 정보, 포인트, 설정을 이 기기에서 모두 지울까요? 되돌릴 수 없어요.")) return;
+  try { Object.keys(localStorage).filter(k => /^barofit|^posture-halmae/.test(k)).forEach(k => localStorage.removeItem(k)); } catch (e) {}
+  location.reload();
+});
 $("tuneReset").addEventListener("click", () => { try { localStorage.removeItem(TUNE_KEY); } catch (e) {} renderTuneNote(); showToast("판정 보정을 처음 상태로 되돌렸어요"); });
 $("diagExport").addEventListener("click", () => {
   flushDiag(); let diag = []; try { diag = JSON.parse(localStorage.getItem(DIAG_KEY) || "[]"); } catch (e) {}
   const data = { app: "barofit-diag", version: 1, savedAt: new Date().toISOString(), profile: profile(), settings: { strict: settings.strict, guide: settings.guide }, tune: tunes(), reps: diag };
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: "application/json" }));
   a.download = `바로핏-판정데이터-${dayStr(new Date())}.json`; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+});
+function feelHTML(s) {
+  return `<div class="feel" id="feel" data-start="${s.start}"><b>오늘 몸 상태는 어땠나요?</b>
+    <div class="judge-row"><button class="jbtn" data-feel="ok" type="button">괜찮았어요</button><button class="jbtn" data-feel="hard" type="button">많이 힘들었어요</button><button class="jbtn" data-feel="pain" type="button">통증이 있었어요</button></div><div id="feelMsg"></div></div>`;
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("#feel .jbtn"); if (!b) return;
+  document.querySelectorAll("#feel .jbtn").forEach(x => x.classList.toggle("on", x === b));
+  const start = Number($("feel").dataset.start), all = loadLog(), it = all.find(x => x.start === start);
+  if (it) { it.feel = b.dataset.feel; try { localStorage.setItem(LOG_KEY, JSON.stringify(all)); } catch (er) {} }
+  $("feelMsg").innerHTML = b.dataset.feel === "pain"
+    ? `<p class="feel-warn">통증이 있으면 운동을 멈추고 쉬어 주세요. 통증이 계속되거나 붓기·저림이 있으면 의사나 물리치료사와 상담하세요. 다음 AI 추천 루틴에서는 오늘 운동한 부위를 며칠 쉬게 할게요.</p>`
+    : b.dataset.feel === "hard" ? `<p>무리하지 않는 게 더 빨리 늘어요. 다음 추천 루틴은 세트를 하나씩 줄이고, 충분히 쉬도록 짤게요.</p>` : `<p>좋아요! 지금 강도로 꾸준히 이어가요.</p>`;
 });
 function judgeHTML(s) {
   const items = s.items.filter(it => !it.hold);
@@ -2817,6 +2896,23 @@ function daysSinceLast() {
   const list = [...workoutDays()].filter(x => x < dayStr(new Date())).sort(); if (!list.length) return null;
   const [y, m, dd] = list[list.length - 1].split("-").map(Number); return Math.round((new Date().setHours(0, 0, 0, 0) - new Date(y, m - 1, dd).getTime()) / 864e5);
 }
+// 가장 오래 쉰 부위 (최근 통증 부위 제외)를 오늘의 추천으로
+function todayPart() {
+  const hist = loadLog().filter(e => e.type === "workout"), last = {}, pain = new Set();
+  hist.forEach(x => x.items.forEach(it => { last[it.group] = Math.max(last[it.group] || 0, x.start); if (x.feel === "pain" && Date.now() - x.start < 96 * 3600e3) pain.add(it.group); }));
+  const cand = ["하체", "가슴", "등", "어깨", "팔", "코어"].filter(g => !pain.has(g));
+  if (!cand.length) return null;
+  cand.sort((a, b) => (last[a] || 0) - (last[b] || 0));
+  const g = cand[0], d = last[g] ? Math.floor((Date.now() - last[g]) / 864e5) : null;
+  return { part: g, why: d == null ? "아직 한 번도 안 했어요" : d === 0 ? "오늘 이미 했어요. 가볍게!" : `마지막 운동 ${d}일 전` };
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("#todayGo"); if (!b) return;
+  if (["active", "countdown", "rest", "demo"].includes(phase)) { showToast("운동이 끝난 뒤에 눌러 주세요"); return; }
+  settings.wmode = "routine"; settings.recPrefs = { ...recPrefs(), parts: [b.dataset.part] }; saveSettings(); refreshSegs();
+  draft = null; recUI = { result: null, seed: Date.now() % 100000 }; recUI.result = recommend(recPrefs(), recUI.seed); renderPicker(); renderRec();
+  setTimeout(() => { const o = document.querySelector(".rec-out, .rec-err, #routines"); o && o.scrollIntoView({ behavior: "smooth", block: "start" }); }, 50);
+});
 function renderWeek() {
   const days = workoutDays(), now = new Date(), dow = (now.getDay() + 6) % 7, mon = new Date(now); mon.setDate(now.getDate() - dow);
   let cnt = 0;
@@ -2826,7 +2922,9 @@ function renderWeek() {
   }).join("");
   const st = streakNow(), today = days.has(dayStr(now));
   const tag = st >= 2 ? `🔥 ${st}일 연속` : today ? "오늘 운동 완료!" : st === 1 ? "어제 했어요. 오늘도 이어가요" : "오늘 시작해 볼까요?";
-  $("weekCard").innerHTML = `<div class="wk-head"><b>이번 주 ${cnt}일 운동</b><span>${tag}</span></div><div class="wk-days">${cells}</div>`;
+  const rec = todayPart();
+  $("weekCard").innerHTML = `<div class="wk-head"><b>이번 주 ${cnt}일 운동</b><span>${tag}</span></div><div class="wk-days">${cells}</div>` +
+    (rec ? `<div class="wk-rec"><span>오늘 추천: <b>${rec.part}</b> · ${rec.why}</span><button type="button" id="todayGo" data-part="${rec.part}">루틴 짜기</button></div>` : "");
 }
 renderWeek();
 
@@ -2864,6 +2962,31 @@ renderKg();
 
 // ===== 버튼 =====
 const showError = msg => { const b = $("errorBox"); b.innerHTML = msg; b.style.display = "block"; };
+// 카메라 오류를 원인별로 안내
+function camErrorText(e) {
+  const n = e && e.name, ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if (n === "NotAllowedError" || n === "SecurityError") return "카메라 사용이 막혀 있어요." + (ios ? "<br>사파리 주소창의 <b>가가(aA) → 웹 사이트 설정 → 카메라 → 허용</b>으로 바꾼 뒤 다시 눌러 주세요. 안 되면 <b>설정 앱 → Safari → 카메라 → 허용</b>을 확인해 주세요." : "<br>주소창 왼쪽의 자물쇠(사이트 설정)에서 카메라를 <b>허용</b>으로 바꾼 뒤 다시 눌러 주세요.");
+  if (n === "NotFoundError" || n === "OverconstrainedError") return "사용할 수 있는 카메라를 찾지 못했어요. 카메라가 있는 기기에서 열어 주세요.";
+  if (n === "NotReadableError" || n === "AbortError") return "다른 앱이 카메라를 쓰고 있어요. 영상통화·카메라 앱을 끈 뒤 다시 눌러 주세요.";
+  return "카메라를 켜지 못했어요. 페이지를 새로고침한 뒤 다시 눌러 주세요.<br><small>" + (n || e) + "</small>";
+}
+// 카메라가 중간에 끊기면 (다른 앱 전환, 연결 문제) 알려주고 다시 켤 수 있게
+function watchTrack() {
+  const tr = stream && stream.getVideoTracks()[0]; if (!tr) return;
+  tr.addEventListener("ended", () => { if (document.visibilityState === "visible") showError("카메라 연결이 끊겼어요. <b>카메라 켜기</b>를 다시 눌러 주세요. 운동 기록은 그대로 있어요."), camOn = false, $("camBtn").hidden = false, $("camBtn").disabled = false, $("goBtn").hidden = true; });
+}
+async function resumeCamera() {
+  const tr = stream && stream.getVideoTracks()[0];
+  if (!camOn || !tr || tr.readyState !== "ended") return;
+  try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } }, audio: false }); video.srcObject = stream; await video.play(); watchTrack(); requestAnimationFrame(loop); }
+  catch (e) { showError(camErrorText(e)); }
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { resumeCamera(); if (camOn) requestAnimationFrame(loop); } });
+// 브라우저를 닫거나 다른 앱으로 넘어가도 운동 중 기록은 저장
+window.addEventListener("pagehide", () => {
+  if (session && ["active", "rest", "countdown", "demo"].includes(phase)) { try { const s2 = closeSession(); if (s2) { phase = "done"; } } catch (e) {} }
+  try { flushDiag(); } catch (e) {}
+});
 async function requestWakeLock() { try { if ("wakeLock" in navigator) wakeLock = await navigator.wakeLock.request("screen"); } catch (e) {} }
 document.addEventListener("visibilitychange", () => { if (camOn && document.visibilityState === "visible") requestWakeLock(); });
 $("camBtn").addEventListener("click", async () => {
@@ -2874,7 +2997,8 @@ $("camBtn").addEventListener("click", async () => {
     setBadge("카메라 켜는 중");
     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
     video.srcObject = stream; await video.play(); $("camEmpty").style.display = "none"; document.querySelector(".cam").classList.add("live");
-  } catch (e) { $("camBtn").disabled = false; setBadge("대기 중"); showError("카메라를 켜지 못했어요. 브라우저 설정에서 카메라 권한을 허용해 주세요.<br><small>" + (e && e.name ? e.name : e) + "</small>"); return; }
+  } catch (e) { $("camBtn").disabled = false; setBadge("대기 중"); showError(camErrorText(e)); return; }
+  watchTrack();
   try {
     setBadge("AI 준비 중");
     const { PoseLandmarker, FilesetResolver } = await import(MP_URL);
@@ -2882,7 +3006,7 @@ $("camBtn").addEventListener("click", async () => {
     const make = delegate => PoseLandmarker.createFromOptions(vision, { baseOptions: { modelAssetPath: MODEL_URL, delegate }, runningMode: "VIDEO", numPoses: 1,
       minPoseDetectionConfidence: 0.5, minPosePresenceConfidence: 0.5, minTrackingConfidence: 0.5 });
     try { landmarker = await make("GPU"); } catch (e) { landmarker = await make("CPU"); }
-  } catch (e) { setBadge("오류", "bad"); showError("AI 모델을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.<br><small>" + (e && e.message ? e.message : e) + "</small>"); return; }
+  } catch (e) { setBadge("오류", "bad"); $("camBtn").disabled = false; showError("AI 모델을 불러오지 못했어요. 처음 한 번은 인터넷 연결이 필요해요. 와이파이나 데이터를 확인한 뒤 <b>카메라 켜기</b>를 다시 눌러 주세요.<br><small>" + (e && e.message ? e.message : e) + "</small>"); return; }
   camOn = true; requestWakeLock();
   $("camBtn").hidden = true; $("goBtn").hidden = false;
   requestAnimationFrame(loop);
@@ -2911,7 +3035,7 @@ $("endBtn").addEventListener("click", () => {
 $("againBtn").addEventListener("click", () => { $("report").hidden = true; phase = "idle"; $("goBtn").hidden = !camOn; $("camBtn").hidden = camOn; renderPicker(); });
 
 // 시험용 내부 접근
-window.__wk = { kgAdvice, startKg, sessionKcal, applyFix, tuneFor, streakNow, renderWeek, profile, get curKg() { return curKg; }, squatLeanMax, runDemo, withDemo, demoProject, demoLerp3, drawDemo, DEMO_POSE, get demo() { return demo; }, ghostPose, ghostTheta, liveErrors, draw, get ghostInfo() { return ghostInfo; }, renderCap, get capText() { return [$("capMain").textContent, $("capSub").textContent, $("capWhy").hidden ? "" : $("capWhy").textContent]; }, frontCorrection, get camView() { return camView; }, get bodyRatio() { return bodyRatio; }, recommend, buildFeedback, showReport, metrics, updateRep, updateHold, beginSet, refFor, setRecording: on => { recording = on ? { reps: [] } : null; }, finishRecording, get recording() { return recording; }, finishSet, closeSession, loadLog, startRoutine: id => { routine = { ...routineById(id), idx: 0 }; ex = exById(routine.items[0].ex); session = newSession(); setNo = 1; log = []; }, get routine() { return routine; }, get ex() { return ex.id; }, get state() { return { phase, repCount, holdTime, setNo, log, errStreak }; }, setEx: id => { ex = exById(id); }, setPhase: p => phase = p };
+window.__wk = { todayPart, frameConf, get confNow() { return confNow; }, set confNow(v) { confNow = v; }, kgAdvice, startKg, sessionKcal, applyFix, tuneFor, streakNow, renderWeek, profile, get curKg() { return curKg; }, squatLeanMax, runDemo, withDemo, demoProject, demoLerp3, drawDemo, DEMO_POSE, get demo() { return demo; }, ghostPose, ghostTheta, liveErrors, draw, get ghostInfo() { return ghostInfo; }, renderCap, get capText() { return [$("capMain").textContent, $("capSub").textContent, $("capWhy").hidden ? "" : $("capWhy").textContent]; }, frontCorrection, get camView() { return camView; }, get bodyRatio() { return bodyRatio; }, recommend, buildFeedback, showReport, metrics, updateRep, updateHold, beginSet, refFor, setRecording: on => { recording = on ? { reps: [] } : null; }, finishRecording, get recording() { return recording; }, finishSet, closeSession, loadLog, startRoutine: id => { routine = { ...routineById(id), idx: 0 }; ex = exById(routine.items[0].ex); session = newSession(); setNo = 1; log = []; }, get routine() { return routine; }, get ex() { return ex.id; }, get state() { return { phase, repCount, holdTime, setNo, log, errStreak }; }, setEx: id => { ex = exById(id); }, setPhase: p => phase = p };
 
 try { window.__coach && window.__coach.faces(m => halmaeSVG(m, true)); } catch (e) {}
 </script>

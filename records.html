@@ -238,6 +238,25 @@
   .day.today span{color:var(--ink)}
   .streak{font-size:14px;color:var(--ink-2);margin-top:12px}
   .streak b{color:var(--ink)}
+  .gr-seg{display:flex;gap:4px;padding:3px;border-radius:999px;background:var(--paper)}
+  .gr-seg button{border:0;border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;font-weight:700;background:transparent;color:var(--ink-2);cursor:pointer}
+  .gr-seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .gr-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  @media (min-width:700px){ .gr-cards{grid-template-columns:repeat(4,minmax(0,1fr))} }
+  .gr-card{padding:12px 14px;border-radius:16px;background:var(--paper)}
+  .gr-card span{display:block;font-size:12.5px;font-weight:700;color:var(--ink-2)}
+  .gr-card b{display:block;margin-top:4px;font-size:22px;font-weight:900;letter-spacing:-.5px}
+  .gr-card em{font-style:normal;font-size:12.5px;font-weight:800}
+  .gr-card em.up{color:var(--good,#17B26A)} .gr-card em.down{color:var(--bad,#F04438)} .gr-card em.same{color:var(--ink-2)}
+  .gr-sub{display:flex;justify-content:space-between;align-items:center;margin:18px 0 6px;font-size:13.5px;font-weight:800}
+  .gr-sub span{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--ink-2)}
+  .lg-bar{display:inline-block;width:10px;height:10px;border-radius:3px;background:#C9D4FF}
+  .lg-line{display:inline-block;width:14px;height:3px;border-radius:2px;background:var(--level,#3557F5);margin-left:6px}
+  .gr-chart svg{display:block;width:100%;height:auto}
+  .gr-note{margin:8px 0 0;font-size:12px;color:var(--ink-2);line-height:1.5}
+  .pb{display:inline-block;margin-left:4px;padding:1px 6px;border-radius:6px;background:#FFF1C2;color:#7A5300;font-size:11px;font-weight:800;vertical-align:1px}
+  .table td small{display:block;font-size:11.5px;font-weight:600;color:var(--ink-2)}
+  .trend-up{color:var(--good,#17B26A)} .trend-down{color:var(--bad,#F04438)}
   .cal{margin-top:16px}
   .cal-title{font-size:14px;font-weight:800;margin-bottom:8px}
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}
@@ -451,12 +470,20 @@
     </section>
 
     <section class="panel">
+      <div class="panel-head"><h2>성장 리포트</h2><div class="gr-seg" id="grSeg"><button data-p="week" class="on" type="button">주간</button><button data-p="month" type="button">월간</button></div></div>
+      <div class="gr-cards" id="grCards"></div>
+      <div class="gr-sub">최근 12주 흐름 <span><i class="lg-bar"></i>운동 시간 <i class="lg-line"></i>자세 점수</span></div>
+      <div class="gr-chart" id="grChart"></div>
+      <p class="gr-note">자세 점수는 촬영 각도와 조명에 따라 달라질 수 있어요. 판정 신뢰도가 낮았던 세트는 빼고 계산해서, 점수 변화는 참고용으로 봐 주세요.</p>
+    </section>
+
+    <section class="panel">
       <div class="panel-head"><h2>최근 운동</h2></div>
       <ul class="list" id="recent"></ul>
     </section>
 
     <section class="panel">
-      <div class="panel-head"><h2>종목별 기록</h2></div>
+      <div class="panel-head"><h2>종목별 기록과 개인 최고</h2></div>
       <table class="table" id="byEx"></table>
     </section>
 
@@ -668,16 +695,61 @@ function render(log, isDemo) {
     return `<li><b>${s.grade ? `<span class="gchip g-${s.grade}">${s.grade}</span>` : ""}${s.routine || s.items.map(i => i.name).join(", ")}</b><em>${r ? Math.round(g / r * 100) + "%" : "–"}</em><small>${when}, ${Math.max(1, Math.round(s.durationSec / 60))}분, ${s.items.length}가지 ${n}세트${r ? `, ${r}회` : ""}</small></li>`;
   }).join("") : `<li><b>아직 운동 기록이 없어요</b><small>운동 화면에서 루틴을 끝내면 여기에 쌓여요.</small></li>`;
 
+  // ===== 성장 리포트 =====
+  const reliable = st => st.score != null && (st.conf == null || st.conf >= 50);
+  const sum = list => { const days = new Set(), o = { days: 0, min: 0, reps: 0, sc: [] }; list.forEach(s => { days.add(s.date); o.min += s.durationSec / 60; s.items.forEach(it => it.sets.forEach(st => { o.reps += (st.good || 0) + (st.bad || 0); if (reliable(st)) o.sc.push(st.score); })); }); o.days = days.size; o.score = o.sc.length ? Math.round(o.sc.reduce((a, b) => a + b, 0) / o.sc.length) : null; return o; };
+  const dAgo = n => { const x = new Date(); x.setDate(x.getDate() - n); return dayStr(x); };
+  const renderGrowth = per => {
+    const n = per === "month" ? 30 : 7, cur = sum(W.filter(s => s.date > dAgo(n))), prev = sum(W.filter(s => s.date > dAgo(2 * n) && s.date <= dAgo(n)));
+    const delta = (a, b, unit = "", fix = 0) => { if (a == null || b == null) return `<em class="same">이전 기록 없음</em>`; const d = +(a - b).toFixed(fix); return d > 0 ? `<em class="up">▲ ${d}${unit}</em>` : d < 0 ? `<em class="down">▼ ${-d}${unit}</em>` : `<em class="same">변화 없음</em>`; };
+    const lbl = per === "month" ? "지난 30일" : "지난 7일", cmp = per === "month" ? "그 전 30일보다" : "그 전 7일보다";
+    $("grCards").innerHTML = [
+      [`${lbl} 운동한 날`, `${cur.days}일`, delta(cur.days, prev.days, "일")],
+      ["운동 시간", `${Math.round(cur.min)}분`, delta(Math.round(cur.min), Math.round(prev.min), "분")],
+      ["총 반복", `${cur.reps}회`, delta(cur.reps, prev.reps, "회")],
+      ["평균 자세 점수", cur.score == null ? "–" : `${cur.score}점`, delta(cur.score, prev.score, "점")]
+    ].map(([a, b, c]) => `<div class="gr-card"><span>${a}</span><b>${b}</b>${c}</div>`).join("") ;
+    $("grCards").title = cmp;
+  };
+  renderGrowth("week");
+  $("grSeg").onclick = e => { const b = e.target.closest("button"); if (!b) return; $("grSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); renderGrowth(b.dataset.p); };
+  // 최근 12주: 막대 = 운동 시간, 선 = 자세 점수
+  (() => {
+    const mon = d => { const x = new Date(d); const k = (x.getDay() + 6) % 7; x.setDate(x.getDate() - k); x.setHours(0, 0, 0, 0); return x; };
+    const start = mon(new Date()); start.setDate(start.getDate() - 7 * 11);
+    const wk = Array.from({ length: 12 }, (_, i) => { const a = new Date(start); a.setDate(a.getDate() + 7 * i); return { a, min: 0, sc: [] }; });
+    W.forEach(s => { const i = Math.floor((mon(s.start) - start) / (7 * 864e5)); if (i >= 0 && i < 12) { wk[i].min += s.durationSec / 60; s.items.forEach(it => it.sets.forEach(st => { if (reliable(st)) wk[i].sc.push(st.score); })); } });
+    const Wd = 360, H = 150, pl = 6, pr = 6, pt = 12, pb = 22, bw = (Wd - pl - pr) / 12, maxM = Math.max(30, ...wk.map(w => w.min));
+    let svg = `<svg viewBox="0 0 ${Wd} ${H}" role="img" aria-label="최근 12주 운동 시간과 자세 점수">`;
+    wk.forEach((w, i) => { const h = (H - pt - pb) * w.min / maxM, x = pl + i * bw + bw * 0.18; svg += `<rect x="${x.toFixed(1)}" y="${(H - pb - h).toFixed(1)}" width="${(bw * 0.64).toFixed(1)}" height="${Math.max(0, h).toFixed(1)}" rx="4" fill="#C9D4FF"/>`;
+      if (i % 2 === 1 || i === 11) svg += `<text x="${(pl + i * bw + bw / 2).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="10" fill="#8A919B">${w.a.getMonth() + 1}/${w.a.getDate()}</text>`; });
+    const pts = wk.map((w, i) => w.sc.length ? [pl + i * bw + bw / 2, pt + (H - pt - pb) * (1 - (w.sc.reduce((a, b) => a + b, 0) / w.sc.length) / 100)] : null).filter(Boolean);
+    if (pts.length > 1) svg += `<polyline points="${pts.map(p => p.map(v => v.toFixed(1)).join(",")).join(" ")}" fill="none" stroke="#3557F5" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    pts.forEach(p => svg += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.2" fill="#3557F5"/>`);
+    $("grChart").innerHTML = svg + "</svg>";
+  })();
+
   // 종목별
   const by = {};
   W.forEach(s => s.items.forEach(it => {
-    const o = by[it.ex] || (by[it.ex] = { name: it.name, hold: it.hold, total: 0, good: 0, best: 0, errs: {} });
-    it.sets.forEach(st => { o.total += st.good + st.bad; o.good += st.good; o.best = Math.max(o.best, it.hold ? st.hold : st.good + st.bad); for (const k in st.errors) o.errs[k] = (o.errs[k] || 0) + st.errors[k]; });
+    const o = by[it.ex] || (by[it.ex] = { name: it.name, hold: it.hold, total: 0, good: 0, best: 0, bestKg: 0, sets: 0, errs: {}, sc: [], recentPB: false });
+    it.sets.forEach(st => {
+      const reps = st.good + st.bad, v = it.hold ? st.hold : reps;
+      if (v > o.best || (st.kg || 0) > o.bestKg) { if (Date.now() - s.start < 7 * 864e5 && (o.best || o.bestKg)) o.recentPB = true; }
+      o.sets++; o.total += reps; o.good += st.good; o.best = Math.max(o.best, v); o.bestKg = Math.max(o.bestKg, st.kg || 0);
+      if (st.score != null && (st.conf == null || st.conf >= 50)) o.sc.push(st.score);
+      for (const k in st.errors) o.errs[k] = (o.errs[k] || 0) + st.errors[k];
+    });
   }));
   const rows = Object.values(by);
-  $("byEx").innerHTML = rows.length ? `<tr><th>종목</th><th>최고</th><th>바른 자세</th><th>자주 실수</th></tr>` + rows.map(o => {
+  const avg = a => Math.round(a.reduce((x, y) => x + y, 0) / a.length);
+  $("byEx").innerHTML = rows.length ? `<tr><th>종목</th><th>최고</th><th>자세 변화</th><th>자주 실수</th></tr>` + rows.map(o => {
     const top = Object.keys(o.errs).sort((a, b) => o.errs[b] - o.errs[a])[0];
-    return `<tr><td>${o.name}</td><td>${o.hold ? o.best + "초" : o.best + "회"}</td><td>${o.hold ? "–" : (o.total ? Math.round(o.good / o.total * 100) + "%" : "–")}</td><td>${top ? ERR_KO[top] : "없음"}</td></tr>`;
+    const best = o.hold ? `${o.best}초` : o.bestKg ? `${o.bestKg}kg<small>한 세트 ${o.best}회</small>` : `${o.best}회`;
+    let tr = "–";
+    if (o.sc.length >= 4) { const a = avg(o.sc.slice(0, 3)), b = avg(o.sc.slice(-3)); tr = `${a}→${b} <span class="${b > a ? "trend-up" : b < a ? "trend-down" : ""}">${b > a ? "▲" : b < a ? "▼" : "–"}</span>`; }
+    else if (o.sc.length) tr = `${avg(o.sc)}점`;
+    return `<tr><td>${o.name}${o.recentPB ? '<span class="pb">이번 주 신기록</span>' : ""}<small>${o.sets}세트 · ${o.hold ? "버티기" : o.total + "회"}</small></td><td>${best}</td><td>${tr}</td><td>${top ? ERR_KO[top] : "없음"}</td></tr>`;
   }).join("") : `<tr><td class="muted">운동을 하면 종목별 최고 기록이 쌓여요.</td></tr>`;
 }
 
