@@ -508,7 +508,10 @@
           <div class="field-note">헬스장에서는 에어팟을 연결하면 코치 목소리가 귀로만 들려요.</div>
         </div>
         <div>
-          <div class="field-label">코치 목소리</div>
+          <div class="field-label">코치 스타일</div>
+          <div class="seg" data-key="coach"><button data-val="kind">친절한 코치</button><button data-val="drill">조교 (빡세게)</button></div>
+          <div class="field-note">조교는 짧고 강하게 명령하면서 끝까지 끌어올려 줘요. 세트 목표를 채우면 1~3개를 깜짝 추가해요. 플랭크는 5~15초 추가.</div>
+          <div class="field-label" style="margin-top:14px">코치 목소리</div>
           <div class="voice-row"><select id="voiceSel" class="voice-sel" aria-label="코치 목소리 선택"></select><button class="btn voice-try" id="voiceTry" type="button">들어보기</button></div>
           <div class="seg" data-key="vtone" style="margin-top:8px"><button data-val="calm">차분하게</button><button data-val="normal">기본</button><button data-val="bright">활기차게</button><button data-val="deep">묵직하게</button></div>
           <div class="field-label" style="margin-top:12px">말하는 속도</div>
@@ -580,7 +583,7 @@ const MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmark
 // ===== 설정 (앉은 자세 화면과 같은 저장 공간을 써서 사투리·알림 방식이 이어짐) =====
 // 스쿼트 상체 숙임 허용치: 바르게 앉아도 상체는 35~50° 기울어지는 게 정상
 const squatLeanMax = () => ({ easy: 68, normal: 60, hard: 52 }[settings.strict] || 60);
-const DEFAULTS = { persona: "coach", mode: "voice", dialect: "gs", strict: "normal", exercise: "squat", reps: 10, sets: 3, rest: 60, holdSec: 30, wmode: "routine", routineId: "begin", useRef: "on", vtone: "normal", voiceName: "", vspeed: "1" };
+const DEFAULTS = { persona: "coach", mode: "voice", dialect: "gs", strict: "normal", exercise: "squat", reps: 10, sets: 3, rest: 60, holdSec: 30, wmode: "routine", routineId: "begin", useRef: "on", vtone: "normal", voiceName: "", vspeed: "1", coach: "kind" };
 let settings = { ...DEFAULTS };
 try { Object.assign(settings, JSON.parse(localStorage.getItem("barofit") || "{}")); } catch (e) {}
 const saveSettings = () => {
@@ -777,6 +780,10 @@ const ERR_SAY = { depth: "더 깊이 앉아요", range: "끝까지 움직여요"
   kneeBend: "무릎을 덜 굽혀요", archback: "허리를 펴요", tooHigh: "어깨 높이까지만", swing: "반동 없이", standUp: "상체를 숙인 채로", swingBack: "몸을 젖히지 마요",
   kip: "다리를 흔들지 마요", elbowDrift: "팔꿈치를 고정해요", squatty: "앉지 말고 숙여요", tooFast: "천천히", uneven: "양팔을 똑같이", noLockout: "끝까지 펴요",
   head: "고개를 들어요", unevenLeg: "양다리를 똑같이", fastDown: "천천히 내려요", refDepth: "조금 더 깊게", refLean: "상체를 세워요", refShape: "모범 동작처럼" };
+const ERR_SAY_DRILL = { depth: "더 앉아!", range: "끝까지!", lean: "가슴 펴!", knees: "무릎 바깥으로!", sag: "엉덩이 올려!", pike: "엉덩이 내려!",
+  kneeBend: "무릎 덜 굽혀!", archback: "허리 펴!", tooHigh: "어깨까지만!", swing: "반동 금지!", standUp: "숙인 채로!", swingBack: "젖히지 마!",
+  kip: "다리 고정!", elbowDrift: "팔꿈치 고정!", squatty: "앉지 말고 숙여!", tooFast: "천천히!", uneven: "양팔 똑같이!", noLockout: "끝까지 펴!",
+  head: "고개 들어!", unevenLeg: "양발 똑같이!", fastDown: "천천히 내려!", refDepth: "더 깊게!", refLean: "몸통 고정!", refShape: "모범처럼!" };
 const ERR_KO = { depth: "덜 앉음", range: "가동 범위 부족", lean: "상체 숙임", knees: "무릎 모임", sag: "허리 처짐", pike: "엉덩이 들림",
   kneeBend: "무릎 과하게 굽힘", archback: "허리 꺾임", tooHigh: "팔 너무 높이 듦", swing: "반동 사용", standUp: "상체 세움",
   swingBack: "상체 젖힘", kip: "몸 흔들기", elbowDrift: "팔꿈치 움직임", squatty: "엉덩이 너무 낮춤", tooFast: "너무 빠름", uneven: "양팔 높이 차이",
@@ -915,6 +922,8 @@ function renderRec() {
 const routineMinutes = r => Math.round(r.items.reduce((a, it) => a + it.sets * ((it.hold || it.reps * 3) + (it.rest || r.rest || settings.rest)), 0) / 60);
 let routine = null;   // 진행 중인 루틴 { ...루틴, idx }
 let session = null;   // 이번 운동 기록
+let setBonus = 0, bonusGiven = false, holdBonus = 0;
+const goalReps = () => tgt().reps + setBonus, goalHold = () => tgt().holdSec + holdBonus;
 function tgt() {
   if (routine) { const it = routine.items[routine.idx]; return { reps: it.reps || 10, sets: it.sets, holdSec: it.hold || 30 }; }
   return { reps: settings.reps, sets: settings.sets, holdSec: settings.holdSec };
@@ -965,7 +974,29 @@ W.coach = {
   restEnd: ["다시 시작할게요."], holdStart: ["시작! 그대로 버텨 주세요."], holdHalf: ["절반 지났어요. 조금만 더!"],
   report: { great: "오늘 자세가 정말 좋았어요. 이대로 꾸준히 해봐요.", ok: "좋은 운동이었어요. 자주 나온 실수만 고치면 더 좋아져요.", bad: "횟수보다 자세가 먼저예요. 다음엔 천천히 정확하게 해봐요." }
 };
-const wline = key => { const P = isCoach() ? W.coach : (W[settings.dialect] || W.gs); return { id: "gen", t: pick(P[key] || P.range) }; };
+// 조교 모드: 짧고 강하게 명령하되, 비난 대신 "할 수 있다"로 끌어올리는 말투
+W.drill = {
+  depth: ["더 앉는다! 허벅지 평행까지!", "깊게 간다! 엉덩이 내려!"], range: ["끝까지 간다! 대충은 없다!", "끝까지! 그래야 1개다!"],
+  lean: ["가슴 편다! 상체 세워!", "상체 세운다! 넌 할 수 있다!"], knees: ["무릎 바깥으로! 발끝 방향!"],
+  sag: ["허리 처졌다! 배에 힘 준다!"], pike: ["엉덩이 내린다! 몸 일자!"],
+  kneeBend: ["무릎 덜 굽히고 엉덩이 뒤로!"], archback: ["허리 꺾지 마! 배에 힘 준다!"],
+  tooHigh: ["어깨 높이까지만! 욕심내지 마!"], swing: ["반동 금지! 근육으로 든다!"], standUp: ["상체 숙인 채로! 일어서지 마!"],
+  lost: ["화면 안으로 들어온다! 전신 보이게!"], good: ["좋다! 바로 그 자세다!", "완벽하다! 계속 간다!", "그렇지! 이게 실력이다!"],
+  swingBack: ["몸 젖히지 마! 가슴만 내밀고 당긴다!"], kip: ["다리 흔들지 마! 순수하게 당긴다!"],
+  elbowDrift: ["팔꿈치 고정! 움직이지 마!"], squatty: ["앉지 말고 숙인다! 엉덩이 뒤로!"],
+  tooFast: ["너무 빠르다! 천천히, 버티면서!"], uneven: ["양팔 똑같이! 한쪽만 쓰지 마!"],
+  refDepth: ["모범만큼 깊게 간다!"], refLean: ["몸통 고정한다!"], refShape: ["모범 동작 그대로 따라 한다!"],
+  noLockout: ["끝까지 편다! 그래야 다음 개다!"], head: ["고개 든다! 시선 앞으로!"],
+  unevenLeg: ["양발 똑같이 민다!"], fastDown: ["내릴 때 천천히! 2초 버틴다!"],
+  last3: ["세 개 남았다! 여기서부터가 진짜다!"], last: ["마지막 하나! 전부 쏟아낸다!"],
+  setDone: ["세트 끝! 잘했다! 숨 고른다!", "좋다! 오늘 제법이다! 쉬어!"], allDone: ["오늘 훈련 끝! 끝까지 버텼다! 자랑스럽다!"],
+  restEnd: ["쉬는 시간 끝! 다시 간다!"], holdStart: ["버틴다! 시작!"], holdHalf: ["절반 왔다! 포기는 없다!"],
+  start: ["준비됐나? 시작한다!", "자세 잡는다! 간다!", "오늘도 한계 넘는다! 시작!"],
+  bonusDone: ["해냈다! 방금 한계를 넘은 거다!", "끝! 진짜 잘했다! 이게 너다!"],
+  report: { great: "오늘 훈련 완벽했다. 이 자세 그대로 계속 간다.", ok: "잘 버텼다. 자주 나온 실수만 잡으면 더 강해진다.", bad: "오늘은 자세가 흔들렸다. 다음엔 천천히, 정확하게 간다. 넌 할 수 있다." }
+};
+const isDrill = () => isCoach() && settings.coach === "drill";
+const wline = key => { const P = isDrill() ? W.drill : isCoach() ? W.coach : (W[settings.dialect] || W.gs); return { id: "gen", t: pick(P[key] || (isDrill() && W.coach[key]) || P.range) }; };
 const NUM = ["하나", "둘", "셋", "넷", "다섯", "여섯", "일곱", "여덟", "아홉", "열", "열하나", "열둘", "열셋", "열넷", "열다섯", "열여섯", "열일곱", "열여덟", "열아홉", "스물"];
 
 // ===== 상태 =====
@@ -1068,8 +1099,8 @@ function loadVoice() {
 function applyVoice(u, rate = 1, pitch = 1) {
   const t = VTONE[settings.vtone] || VTONE.normal;
   u.lang = "ko-KR"; try { if (koVoice) u.voice = koVoice; } catch (x) {}
-  const sp = parseFloat(settings.vspeed) || 1;
-  u.rate = Math.min(2, Math.max(0.5, rate * t.rate * sp)); u.pitch = Math.min(2, Math.max(0, pitch * t.pitch));
+  const sp = parseFloat(settings.vspeed) || 1, dr = isDrill() ? { rate: 1.08, pitch: 0.82 } : { rate: 1, pitch: 1 };
+  u.rate = Math.min(2, Math.max(0.5, rate * t.rate * sp * dr.rate)); u.pitch = Math.min(2, Math.max(0, pitch * t.pitch * dr.pitch)); u.volume = 1;
   return u;
 }
 if ("speechSynthesis" in window) { loadVoice(); speechSynthesis.onvoiceschanged = loadVoice; }
@@ -1337,7 +1368,7 @@ function renderCap(m, now) {
   const slow = s => `<em>천천히</em> ${s}`, hard = s => `<em>힘차게</em> ${s}`;
   const tw = n => P.ecc === 0 ? P[n === 1 ? "a" : "b"] : P.ecc === n ? slow(P[n === 1 ? "a" : "b"]) : hard(P[n === 1 ? "a" : "b"]);
   const tempoTxt = n => P.ecc === 0 ? "리듬 있게 빠르게" : P.ecc === n ? "2초 동안 버티면서" : "1초 안에 짧고 강하게";
-  if (!recording && repCount >= tgt().reps) { setCap("목표 횟수 완료!", "세트를 마무리하는 중이에요"); return; }
+  if (!recording && repCount >= goalReps()) { setCap("목표 횟수 완료!", "세트를 마무리하는 중이에요"); return; }
   if (!rep) {
     if (!e.pose(m)) {
       const w = P.why ? P.why(m) : null;
@@ -1373,7 +1404,7 @@ function setBadge(text, cls = "") { $("badgeText").textContent = text; $("badge"
 function renderHud() {
   $("repNow").textContent = ex.hold ? Math.floor(holdTime) : repCount;
   const T = tgt();
-  $("repGoal").textContent = recording ? "/ 3" : ex.hold ? `/ ${T.holdSec}초` : `/ ${T.reps}`;
+  $("repGoal").textContent = recording ? "/ 3" : ex.hold ? `/ ${T.holdSec + holdBonus}초` : `/ ${T.reps + setBonus}`;
   $("setNow").textContent = recording ? `${ex.name} 모범 동작 등록 중` : routine ? `루틴 ${routine.idx + 1}/${routine.items.length} ${ex.name}, ${setNo}/${T.sets}세트` : `${setNo}세트 / ${T.sets}세트`;
 }
 function bigText(html, ms) {
@@ -1386,8 +1417,8 @@ function sayCount(n, errKey = null, extra = "") {
   if (settings.mode === "screen") return;
   if (settings.mode === "beep") { beep(988, 0.12, 1); if (errKey) setTimeout(() => beep(660, 0.2, 2), 250); return; }
   let t = NUM[n - 1] || String(n);
-  if (errKey && ERR_KO[errKey]) t += `. ${ERR_KO[errKey]}, ${ERR_SAY[errKey] || "자세를 확인해요"}`;
-  if (extra) t += `. ${extra}`;
+  if (isDrill()) { t += "!"; if (errKey) t += ` ${ERR_SAY_DRILL[errKey] || "자세 잡아!"}`; if (extra) t += ` ${extra}`; }
+  else { if (errKey && ERR_KO[errKey]) t += `. ${ERR_KO[errKey]}, ${ERR_SAY[errKey] || "자세를 확인해요"}`; if (extra) t += `. ${extra}`; }
   sayQueued(t, errKey ? 1.1 : 1.25);
 }
 function sayQueued(t, rate = 1.05) {
@@ -1466,7 +1497,7 @@ function finishRecording() {
 
 // ===== 1회 판정 =====
 function updateRep(m, now) {
-  if (!recording && repCount >= tgt().reps) return; // 목표 횟수를 채우면 다음 세트 전까지 더 세지 않음
+  if (!recording && repCount >= goalReps()) return; // 목표 횟수를 채우면 다음 세트 전까지 더 세지 않음
   const e = ex, v = m[e.metric], deep = deepFor(e);
   const inMove = e.dir === "down" ? v < e.start : v > e.start;
   const reached = e.dir === "down" ? v <= deep : v >= deep;
@@ -1510,7 +1541,7 @@ function updateRep(m, now) {
       else if (partialRun >= 3) t += " · 계속 안 세지면 판정 기준을 ‘너그럽게’로";
       noteWhy(t, "", partialRun >= 2 ? 6500 : 4500);
       scold(e.partial, "에헴", true);
-      if (settings.mode === "voice") sayQueued(`안 셌어요. ${ERR_SAY[e.partial] || "조금 더 크게"}`, 1.1); else if (settings.mode === "beep") beep(660, 0.2, 2);
+      if (settings.mode === "voice") sayQueued(isDrill() ? `그건 안 센다! ${ERR_SAY_DRILL[e.partial] || "더 크게!"}` : `안 셌어요. ${ERR_SAY[e.partial] || "조금 더 크게"}`, 1.1); else if (settings.mode === "beep") beep(660, 0.2, 2);
       return;
     }
     repCount++; partialRun = 0;
@@ -1540,12 +1571,23 @@ function updateRep(m, now) {
     if (errs.length) { lg.bad++; errs.forEach(k => lg.errors[k] = (lg.errors[k] || 0) + 1); goodStreak = 0; }
     else { lg.good++; goodStreak++; }
     renderHud();
-    const left = tgt().reps - repCount;
+    // 조교: 목표를 채운 순간 1~3개 깜짝 추가 (세트당 한 번)
+    if (isDrill() && !recording && !bonusGiven && repCount >= tgt().reps) {
+      bonusGiven = true; setBonus = 1 + Math.floor(Math.random() * 3); renderHud();
+      const n = setBonus, kr = ["", "한", "두", "세"][n];
+      const say = pick([`좋다! 근데 아직이다! ${kr} 개 더!`, `여기서 멈추면 아깝다! ${kr} 개 더 간다!`, `목표 달성! 보너스 ${kr} 개! 할 수 있다!`]);
+      bigText(`<div class="hud-rest">조교 보너스<b>+${n}개</b></div>`, 1800); showHalmae(say, { mood: "angry", sticker: "한 개 더!", ms: 2200 });
+      if (settings.mode === "voice") { try { speechSynthesis.cancel(); } catch (x) {} sayQueued(`${NUM[repCount - 1] || repCount}! ${say}`, 1.1); } else if (settings.mode === "beep") beep(880, 0.15, 3);
+      noteWhy(`조교 보너스! ${n}개 더 하면 세트 끝`, "tip", 2500);
+      return;
+    }
+    const left = goalReps() - repCount;
     if (errs.length) { sayCount(repCount, errs[0]); scold(errs[0], "퍽!", true); }
-    else if (left === 3 || left === 1) { sayCount(repCount, null, left === 3 ? "세 개 남았어요" : "마지막 하나"); cheer(left === 3 ? "last3" : "last", 1600, true); }
-    else if (goodStreak > 0 && goodStreak % 5 === 0) { sayCount(repCount, null, "좋아요"); cheer("good", 1600, true); }
+    else if ((left === 3 || left === 1) && !setBonus) { sayCount(repCount, null, isDrill() ? (left === 3 ? "세 개 남았다!" : "마지막!") : (left === 3 ? "세 개 남았어요" : "마지막 하나")); cheer(left === 3 ? "last3" : "last", 1600, true); }
+    else if (setBonus && left > 0) sayCount(repCount, null, left === 1 ? "마지막 보너스!" : "버텨!");
+    else if (goodStreak > 0 && goodStreak % 5 === 0) { sayCount(repCount, null, isDrill() ? "좋다!" : "좋아요"); cheer("good", 1600, true); }
     else sayCount(repCount);
-    if (repCount >= tgt().reps) setTimeout(finishSet, 900);
+    if (repCount >= goalReps()) { if (setBonus) setTimeout(() => cheer("bonusDone", 1800, settings.mode !== "voice"), 500); setTimeout(finishSet, setBonus ? 1800 : 900); }
   }
 }
 // ===== 버티기(플랭크) 판정 =====
@@ -1555,9 +1597,15 @@ function updateHold(m, now) {
   const goodBody = m.body >= ({ easy: 150, normal: 158, hard: 164 }[settings.strict] || 158);
   const lg = curLog();
   if (goodBody) {
-    holdBadSince = null; holdTime += dt; lg.hold = holdTime; setBadge("좋아요, 버티세요", "good"); setCap("<em>좋아요</em>, 버티세요", `${Math.max(0, Math.ceil(tgt().holdSec - holdTime))}초 남았어요 · 배에 힘 주고 숨은 천천히`, holdTime / tgt().holdSec);
+    holdBadSince = null; holdTime += dt; lg.hold = holdTime; setBadge("좋아요, 버티세요", "good"); setCap("<em>좋아요</em>, 버티세요", `${Math.max(0, Math.ceil(goalHold() - holdTime))}초 남았어요 · 배에 힘 주고 숨은 천천히`, holdTime / goalHold());
     if (!holdHalfSaid && holdTime >= tgt().holdSec / 2) { holdHalfSaid = true; cheer("holdHalf", 1600); }
-    if (holdTime >= tgt().holdSec) { finishSet(); }
+    if (holdTime >= tgt().holdSec && isDrill() && !bonusGiven) {
+      bonusGiven = true; holdBonus = 5 * (1 + Math.floor(Math.random() * 3)); renderHud();
+      const say = `아직이다! ${holdBonus}초 더 버틴다!`;
+      bigText(`<div class="hud-rest">조교 보너스<b>+${holdBonus}초</b></div>`, 1800); showHalmae(say, { mood: "angry", sticker: "버텨!", ms: 2200 });
+      if (settings.mode === "voice") sayQueued(say, 1.1); else if (settings.mode === "beep") beep(880, 0.15, 3);
+    }
+    if (holdTime >= goalHold()) { if (holdBonus) cheer("bonusDone", 1800); finishSet(); }
   } else {
     if (!holdBadSince) holdBadSince = now;
     const key = m.sag > 0 ? "sag" : "pike";
@@ -1580,9 +1628,10 @@ function startCountdown(after) {
   tick();
 }
 function beginSet() {
-  repCount = 0; holdTime = 0; rep = null; topPeak = null; holdHalfSaid = false; lastHoldTick = 0; errStreak = {}; goodStreak = 0; curLog(); $("refNow").textContent = "";
+  repCount = 0; holdTime = 0; setBonus = 0; bonusGiven = false; holdBonus = 0; rep = null; topPeak = null; holdHalfSaid = false; lastHoldTick = 0; errStreak = {}; goodStreak = 0; curLog(); $("refNow").textContent = "";
   phase = "active"; ratioBuf = []; fsBuf = []; ghostT = 0; leanWin = []; liveBad = {}; liveCnt = {}; renderHud();
   if (ex.hold) setTimeout(() => cheer("holdStart", 1500), 700);
+  else if (isDrill()) setTimeout(() => cheer("start", 1500), 300);
 }
 const restOf = it => (it && it.rest) || (routine && routine.rest) || settings.rest;
 function startRest(label, onEnd, sec) {
@@ -1761,7 +1810,7 @@ function showReport(s) {
   const score = pct != null && holdPct != null ? Math.round((pct + holdPct) / 2) : (pct ?? holdPct ?? 0);
   const top = Object.keys(errs).sort((a, b) => errs[b] - errs[a])[0];
   const groups = [...new Set(s.items.map(i => i.group))];
-  const R = (isCoach() ? W.coach : (W[settings.dialect] || W.gs)).report;
+  const R = (isDrill() ? W.drill : isCoach() ? W.coach : (W[settings.dialect] || W.gs)).report;
   $("reportAvatar").innerHTML = halmaeSVG(score >= 80 ? "happy" : "angry");
   $("reportQuote").textContent = score >= 80 ? R.great : score >= 55 ? R.ok : R.bad;
   $("reportList").innerHTML =
@@ -2140,13 +2189,14 @@ function tryVoice() {
   if (!("speechSynthesis" in window)) { showToast("이 브라우저는 음성을 지원하지 않아요"); return; }
   try { unlockAudio && unlockAudio(); } catch (x) {}
   speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance("좋아요! 이 목소리로 코칭할게요. 무릎은 발끝 방향으로, 천천히 앉아요."); applyVoice(u, 1.05, 1.05);
+  const u = new SpeechSynthesisUtterance(isDrill() ? "좋다! 오늘 훈련 시작한다! 무릎 바깥으로, 가슴 펴! 넌 할 수 있다!" : "좋아요! 이 목소리로 코칭할게요. 무릎은 발끝 방향으로, 천천히 앉아요."); applyVoice(u, 1.05, 1.05);
   setTimeout(() => speechSynthesis.speak(u), 120);
 }
 $("voiceTry").addEventListener("click", tryVoice);
 $("gearBtn").addEventListener("click", () => { const d = $("settingsPanel"); d.open = true; d.scrollIntoView({ behavior: "smooth", block: "start" }); });
 document.querySelector('.seg[data-key="vtone"]').addEventListener("click", e => { if (e.target.closest("button")) tryVoice(); });
-bindSeg("vspeed");
+bindSeg("vspeed"); bindSeg("coach");
+document.querySelector('.seg[data-key="coach"]').addEventListener("click", e => { if (e.target.closest("button")) tryVoice(); });
 document.querySelector('.seg[data-key="vspeed"]').addEventListener("click", e => { if (e.target.closest("button")) tryVoice(); }); bindSeg("strict"); bindSeg("wmode"); bindSeg("useRef");
 document.querySelector('.seg[data-key="wmode"]').addEventListener("click", () => { if (phase === "idle" || phase === "done") renderPicker(); });
 renderPicker();
