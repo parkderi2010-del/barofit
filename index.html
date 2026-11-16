@@ -200,6 +200,27 @@
   .hud-timer{position:absolute;right:16px;top:14px;padding:8px 14px;border-radius:14px;background:rgba(22,24,29,.62);color:#fff;
     font-size:clamp(22px,4vw,36px);font-weight:900;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none}
   .hud-timer.show{display:block}
+  /* 자막: 지금 할 동작 + 안 세지는 이유 */
+  .hud-count{max-width:42%}
+  .hud-count span{white-space:normal}
+  .cap{position:absolute;left:44%;right:14px;bottom:14px;z-index:3;padding:12px 14px;border-radius:18px;background:rgba(14,16,20,.74);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;text-align:center;pointer-events:none}
+  .cap[hidden]{display:none}
+  .cap-main{font-size:clamp(18px,3.6vw,30px);font-weight:900;letter-spacing:-.5px;line-height:1.25;word-break:keep-all}
+  .cap-main em{font-style:normal;color:#8FD3FF}
+  .cap-sub{margin-top:4px;font-size:clamp(13px,2.1vw,17px);font-weight:700;line-height:1.4;opacity:.88;word-break:keep-all}
+  .cap-sub:empty{display:none}
+  .cap-why{margin-top:8px;padding:7px 10px;border-radius:12px;background:#F5484E;font-size:clamp(13px,2.1vw,17px);font-weight:800;line-height:1.4;word-break:keep-all;text-align:left}
+  .cap-why.ok{background:#1FA971}
+  .cap-why.tip{background:#2E3440}
+  .cap-why[hidden]{display:none}
+  .cap-bar{position:relative;height:8px;margin:9px 2px 2px;border-radius:4px;background:rgba(255,255,255,.18);overflow:visible}
+  .cap-bar[hidden]{display:none}
+  .cap-bar i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:4px;background:#8FD3FF;transition:width .12s linear}
+  .cap-bar.full i{background:#3DDC84}
+  .cap-goal{position:absolute;right:-1px;top:-4px;bottom:-4px;width:3px;border-radius:2px;background:#fff}
+  @media (max-width:520px){ .cap{left:40%;right:8px;bottom:8px;padding:9px 10px} .hud-count{max-width:38%} }
+  .cam.demo-on .hud-count{display:none} .cam.demo-on .cap{left:14px;right:14px}
   .hud-big{position:absolute;inset:0;display:none;place-items:center;color:#fff;font-weight:900;font-size:clamp(90px,22vw,220px);
     text-shadow:0 4px 30px rgba(0,0,0,.5);pointer-events:none;background:rgba(22,24,29,.35)}
   .hud-big.show{display:grid}
@@ -425,6 +446,7 @@
       <div class="badge" id="badge"><i></i><span id="badgeText">대기 중</span></div>
       <div class="hud-timer" id="hudTimer"></div><div class="view-chip" id="viewChip" hidden></div>
       <div class="hud-count" id="hudCount"><b id="repNow">0</b><small id="repGoal">/ 10</small><span id="setNow">1세트 / 3세트</span><span id="refNow" class="hud-ref"></span></div>
+      <div class="cap" id="cap" hidden aria-live="polite"><div class="cap-main" id="capMain"></div><div class="cap-bar" id="capBarWrap" hidden><i id="capBar"></i><span class="cap-goal"></span></div><div class="cap-sub" id="capSub"></div><div class="cap-why" id="capWhy" hidden></div></div>
       <div class="hud-big" id="hudBig"></div>
       <div class="cam-edge" id="camEdge"></div>
       <div class="toast" id="toast"></div>
@@ -432,6 +454,7 @@
     <div class="actions">
       <button class="btn btn-primary" id="camBtn">카메라 켜기</button>
       <button class="btn btn-primary" id="goBtn" hidden>운동 시작</button>
+      <button class="btn" id="skipDemo" hidden>시범 건너뛰기</button>
       <button class="btn" id="endBtn" hidden>끝내고 리포트 보기</button>
     </div>
     <div class="error" id="errorBox" role="alert"></div>
@@ -480,6 +503,11 @@
           <div class="field-label">판정 기준</div>
           <div class="seg" data-key="strict"><button data-val="easy">너그럽게</button><button data-val="normal">보통</button><button data-val="hard">엄격하게</button></div>
           <div class="field-note">너그럽게는 운동을 처음 하는 분, 엄격하게는 정확한 자세를 연습하는 분께 맞아요.</div>
+        </div>
+        <div>
+          <div class="field-label">자세선</div>
+          <div class="seg" data-key="guide"><button data-val="beg">초보 (가이드 선)</button><button data-val="pro">중급 이상 (빨강·초록)</button></div>
+          <div class="field-note">초보는 하늘색 점선을 따라 움직이면 되고, 중급 이상은 자세가 틀린 부위만 빨간 선으로 바로 표시돼요.</div>
         </div>
         <div>
           <div class="field-label">모범 동작과 비교</div>
@@ -1191,6 +1219,83 @@ function updateViewChip() {
     showToast("정면에서도 3D 보정으로 숙임을 잡지만, 이 운동은 옆이나 대각선 45°에서 찍으면 훨씬 정확해요");
   }
 }
+// ===== 자막용 동작 단계 =====
+// a: 시작→가장 깊은 곳으로 가는 동작, b: 다시 돌아오는 동작, ecc: 천천히 버텨야 하는 쪽(1=a, 2=b, 0=없음)
+// ready: 준비 자세 설명, why: 지금 준비 자세가 아닌 이유(가능할 때만)
+const leanMax = n => m => m.lean >= n ? `상체가 ${Math.round(m.lean)}° 숙여져 있어요. ${Math.round(m.lean - n + 3)}° 정도 더 세워 주세요` : null;
+const leanMin = (n, t) => m => m.lean <= n ? `${t} (지금 ${Math.round(m.lean)}°, ${n + 3}° 이상 필요)` : null;
+const PHASE = {
+  squat:     { a: "앉기", b: "일어나기", ecc: 1, ready: "똑바로 서서 발을 어깨너비로 벌려 주세요", why: leanMax(70), fin: "무릎을 끝까지 펴고 서야" },
+  lunge:     { a: "내려가기", b: "올라오기", ecc: 1, ready: "한 발을 앞으로 내딛고 상체를 세워 주세요", why: leanMax(60), fin: "다리를 펴고 올라와야" },
+  rdl:       { a: "숙이기", b: "일어나기", ecc: 1, ready: "바나 덤벨을 들고 똑바로 서 주세요", fin: "엉덩이를 밀어 끝까지 서야" },
+  pushup:    { a: "내려가기", b: "밀어 올리기", ecc: 1, ready: "팔을 펴고 엎드려 몸을 일자로 만들어 주세요", why: leanMin(50, "몸을 더 눕혀 바닥과 나란하게 해 주세요"), fin: "팔을 끝까지 펴야" },
+  bench:     { a: "내리기", b: "밀어 올리기", ecc: 1, ready: "벤치에 누워 팔을 위로 쭉 펴 주세요", why: leanMin(55, "벤치에 등을 대고 누워 주세요"), fin: "팔을 끝까지 펴야" },
+  press:     { a: "밀어 올리기", b: "내리기", ecc: 2, ready: "덤벨이나 바를 어깨 높이에 두고 상체를 세워 주세요", why: leanMax(45), fin: "어깨 높이까지 내려와야" },
+  raise:     { a: "들어 올리기", b: "내리기", ecc: 2, ready: "팔을 몸 옆에 내리고 똑바로 서 주세요", why: leanMax(45), fin: "팔을 옆까지 내려야" },
+  curl:      { a: "들어 올리기", b: "내리기", ecc: 2, ready: "팔을 아래로 펴고 팔꿈치를 옆구리에 붙여 주세요", why: leanMax(45), fin: "팔을 끝까지 펴서 내려야" },
+  row:       { a: "당기기", b: "내리기", ecc: 2, ready: "허리를 펴고 상체를 45° 정도 숙여 주세요", why: m => m.lean <= 25 ? `상체를 더 숙여 주세요 (지금 ${Math.round(m.lean)}°)` : m.lean >= 85 ? "상체를 조금 세워 주세요" : null, fin: "팔을 끝까지 펴서 내려야" },
+  latpull:   { a: "당기기", b: "되돌리기", ecc: 2, ready: "바를 잡고 팔을 머리 위로 펴 주세요", why: m => m.wristUp <= 0.05 ? "손이 어깨보다 위에 있어야 해요. 바를 머리 위에서 잡아 주세요" : null, fin: "팔을 위로 끝까지 펴야" },
+  pullup:    { a: "올라가기", b: "내려오기", ecc: 2, ready: "바에 매달려 팔을 쭉 펴 주세요", why: m => m.wristUp <= 0.1 ? "손이 머리 위에 있어야 해요. 바에 매달려 주세요" : m.lean >= 40 ? "몸이 너무 기울었어요. 곧게 매달려 주세요" : null, fin: "팔을 끝까지 펴고 내려와야" },
+  dbrow:     { a: "당기기", b: "내리기", ecc: 2, ready: "한 손을 벤치에 짚고 상체를 숙여 주세요", why: m => m.lean <= 30 ? `상체를 더 숙여 주세요 (지금 ${Math.round(m.lean)}°)` : null, fin: "팔을 끝까지 펴서 내려야" },
+  hammer:    { a: "들어 올리기", b: "내리기", ecc: 2, ready: "팔을 아래로 펴고 팔꿈치를 옆구리에 붙여 주세요", why: leanMax(45), fin: "팔을 끝까지 펴서 내려야" },
+  ohext:     { a: "펴기", b: "내리기", ecc: 2, ready: "팔을 머리 위로 올리고 팔꿈치를 귀 옆에 붙여 주세요", why: m => m.upperArm <= 135 ? "팔꿈치를 머리 위로 더 높이 들어 주세요" : null, fin: "머리 뒤로 충분히 내려야" },
+  pushdown:  { a: "밀어 내리기", b: "되돌리기", ecc: 2, ready: "손잡이를 잡고 팔꿈치를 옆구리에 붙여 주세요", why: m => m.upperArm >= 35 ? "팔꿈치가 몸에서 떨어졌어요. 옆구리에 붙여 주세요" : null, fin: "가슴 높이까지 되돌아와야" },
+  frontraise:{ a: "들어 올리기", b: "내리기", ecc: 2, ready: "팔을 몸 앞에 내리고 똑바로 서 주세요", why: leanMax(45), fin: "팔을 아래까지 내려야" },
+  legpress:  { a: "내리기", b: "밀기", ecc: 1, ready: "머신에 앉아 발을 발판에 올려 주세요", why: m => m.hip >= 135 ? "머신 등받이에 기대 앉아 주세요" : null, fin: "다리를 거의 끝까지 밀어야" },
+  legext:    { a: "펴기", b: "내리기", ecc: 2, ready: "머신에 앉아 발목을 패드 뒤에 걸어 주세요", why: m => m.hip >= 125 ? "머신에 깊게 앉아 주세요" : null, fin: "무릎을 다시 굽혀 내려야" },
+  hipthrust: { a: "밀어 올리기", b: "내리기", ecc: 2, ready: "등을 벤치에 기대고 무릎을 세워 주세요", why: leanMin(45, "등을 벤치에 기대 몸을 눕혀 주세요"), fin: "엉덩이를 다시 내려야" },
+  deadlift:  { a: "내리기", b: "일어나기", ecc: 1, ready: "바를 들고 똑바로 서 주세요", why: leanMax(35), fin: "엉덩이를 밀어 끝까지 서야" },
+  dips:      { a: "내려가기", b: "밀어 올리기", ecc: 1, ready: "평행봉을 잡고 팔을 펴서 몸을 들어 주세요", why: m => m.wristUp >= -0.15 ? "손이 어깨보다 아래에 있어야 해요. 평행봉을 짚고 몸을 들어 주세요" : m.lean >= 55 ? "상체를 조금 세워 주세요" : null, fin: "팔을 끝까지 펴야" },
+  jjack:     { a: "벌리기", b: "모으기", ecc: 0, ready: "똑바로 서서 팔을 내려 주세요", why: leanMax(30), fin: "팔을 내려 모아야" },
+};
+const PART_KO = { shoulder: "어깨", elbow: "팔꿈치", wrist: "손목", hip: "엉덩이", knee: "무릎", ankle: "발목" };
+let capLast = "", capWhy = null, partialRun = 0, lostSince = 0;
+function setCap(main, sub = "", bar = null) {
+  const why = capWhy && performance.now() < capWhy.until ? capWhy : null;
+  const key = main + "|" + sub + "|" + (bar == null ? "" : Math.round(bar * 50)) + "|" + (why ? why.text + why.cls : "");
+  if (key === capLast) return; capLast = key;
+  $("cap").hidden = false; $("capMain").innerHTML = main; $("capSub").textContent = sub;
+  const bw = $("capBarWrap");
+  if (bar == null) bw.hidden = true; else { bw.hidden = false; $("capBar").style.width = Math.round(Math.min(1, Math.max(0, bar)) * 100) + "%"; bw.classList.toggle("full", bar >= 1); }
+  const w = $("capWhy"); w.hidden = !why; if (why) { w.textContent = why.text; w.className = "cap-why " + (why.cls || ""); }
+}
+function hideCap() { if (capLast !== "") { capLast = ""; $("cap").hidden = true; } }
+function noteWhy(text, cls = "", ms = 4500) { capWhy = { text, cls, until: performance.now() + ms }; capLast = "x"; }
+// 시작 각도에서 목표까지 얼마나 갔는지 (0~1)
+function depthPct(e, v) { const d = deepFor(e); return e.dir === "down" ? (e.start - v) / (e.start - d) : (v - e.start) / (d - e.start); }
+function backPct(e, v) { const d = deepFor(e); return e.dir === "down" ? (v - d) / (e.end - d) : (d - v) / (d - e.end); }
+function missingParts(lm) {
+  if (!lm) return null;
+  const v = i => (lm[i] && lm[i].visibility != null) ? lm[i].visibility : 0;
+  return ex.need.filter(k => Math.max(v(L[k][0]), v(L[k][1])) <= 0.5);
+}
+// 매 프레임 자막 갱신 (반복 운동)
+function renderCap(m, now) {
+  const e = ex, P = PHASE[e.id] || { a: "동작", b: "되돌리기", ecc: 0, ready: e.cue }, v = m[e.metric];
+  const slow = s => `<em>천천히</em> ${s}`, hard = s => `<em>힘차게</em> ${s}`;
+  const tw = n => P.ecc === 0 ? P[n === 1 ? "a" : "b"] : P.ecc === n ? slow(P[n === 1 ? "a" : "b"]) : hard(P[n === 1 ? "a" : "b"]);
+  const tempoTxt = n => P.ecc === 0 ? "리듬 있게 빠르게" : P.ecc === n ? "2초 동안 버티면서" : "1초 안에 짧고 강하게";
+  if (!recording && repCount >= tgt().reps) { setCap("목표 횟수 완료!", "세트를 마무리하는 중이에요"); return; }
+  if (!rep) {
+    if (!e.pose(m)) {
+      const w = P.why ? P.why(m) : null;
+      setCap("준비 자세", (w || P.ready) + " · 이 자세가 잡혀야 세기 시작해요");
+      return;
+    }
+    setCap(`준비 완료 → ${tw(1)}`, guideMode() === "beg" ? `하늘색 점선을 따라 하세요 · ${tempoTxt(1)}` : tempoTxt(1));
+    return;
+  }
+  const dur = (now - rep.t0) / 1000;
+  if (guideMode() === "beg" && ghostHint && !ex.hold) { setCap(tw(rep.reached ? 2 : 1), ghostHint, rep.reached ? Math.max(0, backPct(e, v)) : depthPct(e, v)); return; }
+  if (!rep.reached) {
+    const pct = depthPct(e, v), best = Math.max(rep.best || 0, pct); rep.best = best;
+    const left = Math.max(0, Math.round((1 - best) * 100));
+    setCap(tw(1), left > 0 ? `목표 지점까지 ${left}% 남았어요` + (P.ecc === 1 ? ` · ${dur.toFixed(1)}초` : "") : "목표 지점 도착!", pct);
+  } else {
+    const bp = backPct(e, v);
+    setCap(tw(2), bp >= 0.8 ? `거의 다 왔어요. ${P.fin} 1회예요` : `좋아요! 이제 ${P.b} · ${tempoTxt(2)}`, Math.max(0, bp));
+  }
+}
 function visibleEnough(lm) {
   const v = i => (lm[i] && lm[i].visibility != null) ? lm[i].visibility : 0;
   return ex.need.every(k => Math.max(v(L[k][0]), v(L[k][1])) > 0.5);
@@ -1308,6 +1413,7 @@ function updateRep(m, now) {
   }
   if (m.body < rep.worstBody) { rep.worstBody = m.body; rep.sagAtWorst = m.sag; }
   rep.samples.push([v, m.lean]);
+  rep.best = Math.max(rep.best || 0, depthPct(e, v));
   if (reached) { if (!rep.reached) rep.tReach = now; rep.reached = true; }
   // 바닥은 찍었는데 끝까지 돌아오지 않고 멈춘 경우 → 1.2초 뒤 그 회를 마무리하고 "끝까지" 안내
   let forced = false;
@@ -1317,7 +1423,8 @@ function updateRep(m, now) {
   }
   if (back || forced) {
     const r = rep; rep = null;
-    if (now - r.t0 < 350) return; // 너무 짧은 흔들림은 무시
+    if (e.lock && m[e.lock.metric] != null) topPeak = m[e.lock.metric]; // 돌아온 순간의 각도도 "끝까지 폈는지"에 포함
+    if (now - r.t0 < 350) { if (!recording && r.reached) noteWhy("안 셌어요 · 너무 순식간이라 흔들림으로 봤어요. 조금 천천히!"); return; } // 너무 짧은 흔들림은 무시
     if (recording) {
       if (!r.reached) { showToast("조금 더 크게 움직여 주세요"); return; }
       recording.reps.push(resample(r.samples)); repCount++; renderHud(); sayCount(repCount);
@@ -1325,8 +1432,16 @@ function updateRep(m, now) {
       return;
     }
     const lg = curLog();
-    if (!r.reached) { lg.partial++; lg.errors[e.partial] = (lg.errors[e.partial] || 0) + 1; goodStreak = 0; scold(e.partial, "에헴"); return; }
-    repCount++;
+    if (!r.reached) {
+      lg.partial++; lg.errors[e.partial] = (lg.errors[e.partial] || 0) + 1; goodStreak = 0; partialRun++;
+      const P = PHASE[e.id] || { a: "움직이기" }, got = Math.max(0, Math.min(99, Math.round((r.best || 0) * 100)));
+      let t = `안 셌어요 · 목표의 ${got}%까지만 갔어요. ${P.a}를 조금 더 크게!`;
+      if (partialRun >= 2 && camView === "front") t += " · 정면은 각도가 덜 잡혀요. 대각선 45°에서 찍거나 판정 기준을 ‘너그럽게’로";
+      else if (partialRun >= 3) t += " · 계속 안 세지면 판정 기준을 ‘너그럽게’로";
+      noteWhy(t, "", partialRun >= 2 ? 6500 : 4500);
+      scold(e.partial, "에헴"); return;
+    }
+    repCount++; partialRun = 0;
     const errs = e.rules.filter(rule => rule.when(r)).map(rule => rule.err);
     if (forced) errs.push(e.dir === "down" ? "noLockout" : "range");
     const dur = (now - r.t0) / 1000, sf = { easy: 0.75, normal: 1, hard: 1.2 }[settings.strict] || 1;
@@ -1348,6 +1463,7 @@ function updateRep(m, now) {
     errs.sort((a, b) => rank(a) - rank(b));
     let score = Math.max(0, 100 - 22 * errs.length); if (cmp) score = Math.round((score + cmp.score) / 2);
     lg.scores.push(score);
+    noteWhy(errs.length ? `${repCount}회 인정! 다음엔 ${ERR_KO[errs[0]] || "자세"} 주의` : `${repCount}회 인정! 좋은 자세예요`, errs.length ? "tip" : "ok", 1600);
     $("refNow").textContent = `이번 동작 ${score}점, 템포 ${dur.toFixed(1)}초` + (cmp ? `, 모범 동작 일치도 ${cmp.score}%` : "");
     if (errs.length) { lg.bad++; errs.forEach(k => lg.errors[k] = (lg.errors[k] || 0) + 1); goodStreak = 0; }
     else { lg.good++; goodStreak++; }
@@ -1363,17 +1479,18 @@ function updateRep(m, now) {
 // ===== 버티기(플랭크) 판정 =====
 function updateHold(m, now) {
   const dt = lastHoldTick ? Math.min(0.3, (now - lastHoldTick) / 1000) : 0; lastHoldTick = now;
-  if (!ex.pose(m)) { setBadge("플랭크 자세를 잡아 주세요"); holdBadSince = null; return; }
+  if (!ex.pose(m)) { setBadge("플랭크 자세를 잡아 주세요"); setCap("준비 자세", "팔꿈치를 바닥에 대고 엎드려 몸을 일자로 만들어 주세요 · 자세가 잡혀야 시간이 흘러요"); holdBadSince = null; return; }
   const goodBody = m.body >= ({ easy: 150, normal: 158, hard: 164 }[settings.strict] || 158);
   const lg = curLog();
   if (goodBody) {
-    holdBadSince = null; holdTime += dt; lg.hold = holdTime; setBadge("좋아요, 버티세요", "good");
+    holdBadSince = null; holdTime += dt; lg.hold = holdTime; setBadge("좋아요, 버티세요", "good"); setCap("<em>좋아요</em>, 버티세요", `${Math.max(0, Math.ceil(tgt().holdSec - holdTime))}초 남았어요 · 배에 힘 주고 숨은 천천히`, holdTime / tgt().holdSec);
     if (!holdHalfSaid && holdTime >= tgt().holdSec / 2) { holdHalfSaid = true; cheer("holdHalf", 1600); }
     if (holdTime >= tgt().holdSec) { finishSet(); }
   } else {
     if (!holdBadSince) holdBadSince = now;
     const key = m.sag > 0 ? "sag" : "pike";
     setBadge(`${ERR_KO[key]}: 시간이 멈췄어요`, "bad");
+    setCap(key === "sag" ? "엉덩이를 조금 올려 주세요" : "엉덩이를 조금 내려 주세요", "몸이 일자가 아니라서 시간이 멈췄어요", holdTime / tgt().holdSec);
     if (now - holdBadSince > 1500) { lg.errors[key] = (lg.errors[key] || 0) + 1; holdBadSince = now; scold(key); }
   }
   renderHud();
@@ -1381,7 +1498,7 @@ function updateHold(m, now) {
 
 // ===== 세트 흐름 =====
 function startCountdown(after) {
-  phase = "countdown"; let n = 3; hideHalmae();
+  phase = "countdown"; let n = 3; hideHalmae(); hideCap(); capWhy = null; partialRun = 0;
   const tick = () => {
     if (phase !== "countdown") return;
     if (n > 0) { bigText(String(n)); if (settings.mode !== "screen") beep(660, 0.12, 1); n--; setTimeout(tick, 1000); return; }
@@ -1392,7 +1509,7 @@ function startCountdown(after) {
 }
 function beginSet() {
   repCount = 0; holdTime = 0; rep = null; topPeak = null; holdHalfSaid = false; lastHoldTick = 0; errStreak = {}; goodStreak = 0; curLog(); $("refNow").textContent = "";
-  phase = "active"; renderHud();
+  phase = "active"; ghostT = 0; leanWin = []; liveBad = {}; liveCnt = {}; renderHud();
   if (ex.hold) setTimeout(() => cheer("holdStart", 1500), 700);
 }
 const restOf = it => (it && it.rest) || (routine && routine.rest) || settings.rest;
@@ -1422,7 +1539,7 @@ function finishExercise() {
     const t = isCoach() ? `다음은 ${ex.name}이에요. 카메라 위치를 확인해 주세요.` : (NEXT_LINE[settings.dialect] || NEXT_LINE.gs)(ex.name);
     showHalmae(t, { mood: "happy", ms: 2400 }); if (settings.mode === "voice") speakHalmae(t);
     setTimeout(() => showToast(ex.view), 2500);
-    startRest(`다음 운동: ${ex.name}`, () => startCountdown(beginSet), Math.max(prevRest, 45));
+    startRest(`다음 운동: ${ex.name}`, () => withDemo(() => startCountdown(beginSet)), Math.max(prevRest, 45));
     return;
   }
   phase = "done"; cheer("allDone", 3000); setBadge("운동 끝");
@@ -1597,22 +1714,178 @@ function showReport(s) {
 // ===== 매 프레임 =====
 const BONES = [[11, 12], [11, 13], [13, 15], [12, 14], [14, 16], [11, 23], [12, 24], [23, 24], [23, 25], [25, 27], [24, 26], [26, 28]];
 const overlay = $("overlay"), ctx = overlay.getContext("2d"), video = $("video");
-function draw(lm, color) {
+// ===== 자세선: 초보자 가이드 선 / 중급 이상 빨강·초록 =====
+const SEG = { torso: [[11, 12], [11, 23], [12, 24], [23, 24]], thigh: [[23, 25], [24, 26]], shin: [[25, 27], [26, 28]], uarm: [[11, 13], [12, 14]], farm: [[13, 15], [14, 16]], neck: [["sm", "em"]] };
+const ERR_SEG = { lean: ["torso"], swingBack: ["torso"], archback: ["torso"], standUp: ["torso"], kip: ["torso", "thigh"], swing: ["torso", "uarm"],
+  knees: ["thigh", "shin"], kneeBend: ["thigh", "shin"], squatty: ["thigh", "shin"], sag: ["torso", "thigh", "shin"], pike: ["torso", "thigh"],
+  elbowDrift: ["uarm"], tooHigh: ["uarm", "farm"], uneven: ["uarm", "farm"], unevenLeg: ["thigh", "shin"], head: ["neck"] };
+const C_GREEN = "#2BD67B", C_RED = "#FF4D4F", C_WHITE = "rgba(255,255,255,.85)", C_GUIDE = "#8FD3FF";
+const SIDE = [{ s: 11, e: 13, w: 15, h: 23, k: 25, a: 27 }, { s: 12, e: 14, w: 16, h: 24, k: 26, a: 28 }];
+const FRONT_PLANE = new Set(["press", "raise", "jjack", "latpull", "pullup", "ohext", "pushdown"]); // 정면에서도 움직임이 화면 안에서 보이는 운동
+let leanWin = [], liveBad = {}, liveCnt = {}, ghostT = 0, ghostLast = 0, ghostInfo = null, ghostHint = "", ghostSign = {};
+const SWAY = new Set(["swing", "kip", "swingBack", "archback"]);
+const guideMode = () => settings.guide === "beg" ? "beg" : "pro";
+// 지금 이 순간 틀린 부분 (중급 이상)
+function liveErrors(m, now) {
+  const e = ex, out = new Set();
+  leanWin.push([now, m.lean]); while (leanWin.length && now - leanWin[0][0] > 900) leanWin.shift();
+  if (e.hold) { if (e.pose(m) && m.body < ({ easy: 150, normal: 158, hard: 164 }[settings.strict] || 158)) out.add(m.sag > 0 ? "sag" : "pike"); }
+  else if (rep || e.pose(m)) {
+    const ls = leanWin.map(x => x[1]);
+    const sl = rep ? rep.startLean : m.lean;
+    const Sw = { min: { ...m, lean: Math.min(...ls) }, max: { ...m, lean: Math.max(...ls) }, startLean: sl, sagAtWorst: m.sag, worstBody: m.body }; // 흔들림: 최근 0.9초
+    const Si = { min: { ...m }, max: { ...m }, startLean: sl, sagAtWorst: m.sag, worstBody: m.body };                                    // 나머지: 지금 이 순간
+    for (const r of e.rules) { try { if (r.when(SWAY.has(r.err) ? Sw : Si)) out.add(r.err); } catch (x) {} }
+    const st = settings.strict;
+    if (e.neck && m.neck > ({ easy: 62, normal: 55, hard: 48 }[st] || 55)) out.add("head");
+    if (e.legSym && m.kneeDiff > ({ easy: 30, normal: 22, hard: 16 }[st] || 22)) out.add("unevenLeg");
+    if (e.sym && m.elbowDiff > ({ easy: 35, normal: 28, hard: 22 }[st] || 28)) out.add("uneven");
+    if (e.trunk && rep && Math.abs(m.lean - rep.startLean) > e.trunk * ({ easy: 1.3, normal: 1, hard: 0.8 }[st] || 1)) out.add("swing");
+  }
+  // 2프레임 연속일 때만 빨갛게, 고쳐도 0.45초는 남겨서 깜빡임 방지
+  for (const k of out) { liveCnt[k] = (liveCnt[k] || 0) + 1; if (liveCnt[k] >= 2) liveBad[k] = now; }
+  for (const k in liveCnt) if (!out.has(k)) liveCnt[k] = 0;
+  const res = []; for (const k in liveBad) if (now - liveBad[k] < 450) res.push(k);
+  const rank = k => { const i = ERR_ORDER.indexOf(k); return i < 0 ? 99 : i; };
+  return res.sort((a, b) => rank(a) - rank(b));
+}
+// 가이드 선이 지금 가리키는 목표 각도 (초보자용 템포: 버티는 쪽 2초, 힘쓰는 쪽 1초)
+function ghostTheta(e, dt, run) {
+  const P = PHASE[e.id] || { ecc: 0 }, A = P.ecc === 1 ? 2 : P.ecc === 0 ? 0.45 : 1, B = P.ecc === 2 ? 2 : P.ecc === 0 ? 0.45 : 1;
+  const H1 = P.ecc === 0 ? 0.05 : 0.35, H0 = P.ecc === 0 ? 0.05 : 0.8;
+  if (run) ghostT += dt;
+  const T = A + H1 + B + H0, t = ghostT % T;
+  let u = t < A ? t / A : t < A + H1 ? 1 : t < A + H1 + B ? 1 - (t - A - H1) / B : 0;
+  u = u * u * (3 - 2 * u);
+  const top = e.end, deep = deepFor(e) + (e.dir === "down" ? -5 : 5);
+  return { theta: top + (deep - top) * u, u, stage: t < A ? 1 : t < A + H1 ? 1.5 : t < A + H1 + B ? 2 : 0 };
+}
+const sub2 = (a, b) => [a[0] - b[0], a[1] - b[1]], len2 = v => Math.hypot(v[0], v[1]);
+function rot(p, j, a) { const c = Math.cos(a), s2 = Math.sin(a), x = p[0] - j[0], y = p[1] - j[1]; return [j[0] + x * c - y * s2, j[1] + x * s2 + y * c]; }
+function ang2(a, j, c) { const u = sub2(a, j), v = sub2(c, j); return Math.atan2(u[0] * v[1] - u[1] * v[0], u[0] * v[0] + u[1] * v[1]); }
+// 관절 j에서 a-j-c 각도가 theta가 되도록 moving 점들을 회전. pref: 곧게 펴져 있을 때 c가 움직일 x방향(+1/-1)
+function bendTo(g, j, a, c, theta, moving, key, pref) {
+  const phi = ang2(g[a], g[j], g[c]), th = theta * Math.PI / 180;
+  let sign;
+  if (Math.abs(Math.sin(phi)) > 0.26) sign = Math.sign(phi);
+  else if (ghostSign[key]) sign = ghostSign[key];
+  else { const c1 = rot(g[c], g[j], th - phi), c2 = rot(g[c], g[j], -th - phi); sign = ((c1[0] - g[c][0]) * pref >= (c2[0] - g[c][0]) * pref) ? 1 : -1; }
+  ghostSign[key] = sign;
+  const d = sign * th - phi, from = g[c].slice();
+  for (const i of moving) if (g[i]) g[i] = rot(g[i], g[j], d);
+  return sub2(g[c], from);
+}
+function ghostPose(pts, e, theta) {
+  const g = pts.map(p => p && p.slice()), M = e.metric, base = M.replace("Min", "");
+  const earX = (pts[7][0] + pts[8][0]) / 2, face = Math.sign(pts[0][0] - earX) || 1;
+  const front = camView === "front" && !FRONT_PLANE.has(e.id);
+  let sides = [0, 1];
+  if (M.endsWith("Min")) {
+    const A = i => { const S = SIDE[i]; return base === "knee" ? Math.abs(ang2(g[S.h], g[S.k], g[S.a])) : Math.abs(ang2(g[S.s], g[S.e], g[S.w])); };
+    sides = [A(0) <= A(1) ? 0 : 1];
+  }
+  const upper = [0, 7, 8, 11, 12, 13, 14, 15, 16];
+  const shift = (idx, d) => { for (const i of idx) if (g[i]) g[i] = [g[i][0] + d[0], g[i][1] + d[1]]; };
+  const cosT = Math.cos(theta * Math.PI / 180);
+  if (base === "knee" && (e.id === "legpress" || e.id === "legext")) {
+    for (const i of sides) { const S = SIDE[i];
+      if (front) { const L = len2(sub2(g[S.h], g[S.k])); g[S.a] = [g[S.k][0], g[S.k][1] + L * Math.max(0.08, Math.sin(theta * Math.PI / 180))]; }
+      else bendTo(g, S.k, S.h, S.a, theta, [S.a], "kd" + i, face);
+    }
+  } else if (base === "knee") {
+    let dsum = [0, 0];
+    for (const i of sides) { const S = SIDE[i];
+      if (front) { const L = len2(sub2(g[S.a], g[S.k])), ny = g[S.k][1] - L * Math.max(0.08, -cosT); dsum = [dsum[0], dsum[1] + (ny - g[S.h][1])]; g[S.h] = [g[S.h][0], ny]; }
+      else { const d = bendTo(g, S.k, S.a, S.h, theta, [S.h], "kp" + i, -face); dsum = [dsum[0] + d[0], dsum[1] + d[1]]; }
+    }
+    const d = [dsum[0] / sides.length, dsum[1] / sides.length];
+    shift(upper, d); if (sides.length === 1) shift([SIDE[1 - sides[0]].h], d);
+    // 스쿼트는 앉을수록 상체가 자연스럽게 앞으로 기울어짐 (약 0.45배)
+    if (e.id === "squat" && !front) { const hm = [(g[23][0] + g[24][0]) / 2, (g[23][1] + g[24][1]) / 2], a = face * (180 - theta) * 0.45 * Math.PI / 180; for (const k of upper) if (g[k]) g[k] = rot(g[k], hm, a); }
+  } else if (base === "hip") {
+    const S = SIDE[0];
+    if (front) { const L = len2(sub2(g[S.s], g[S.h])), ny = g[S.h][1] - L * Math.max(0.05, -cosT); shift(upper, [0, ny - g[S.s][1]]); }
+    else bendTo(g, S.h, S.k, S.s, theta, upper, "hp", face); // 어깨를 엉덩이 중심으로 돌리면서 상체 전체를 같이 돌림
+  } else if (base === "elbow") {
+    for (const i of sides) { const S = SIDE[i];
+      if (front) { const ua = sub2(g[S.e], g[S.s]), L = len2(ua) * 0.9 || 1, u = [ua[0] / (len2(ua) || 1), ua[1] / (len2(ua) || 1)], k = -cosT; g[S.w] = [g[S.e][0] + u[0] * L * k, g[S.e][1] + u[1] * L * k]; }
+      else bendTo(g, S.e, S.s, S.w, theta, [S.w], "el" + i, face);
+    }
+  } else if (base === "abd") {
+    const cx = (g[23][0] + g[24][0]) / 2;
+    for (const i of sides) { const S = SIDE[i];
+      if (front && e.id === "frontraise") { const L = len2(sub2(g[S.w], g[S.s])) || 1, k = Math.max(0.1, Math.cos(theta * Math.PI / 180)); g[S.e] = [g[S.s][0], g[S.s][1] + L * 0.5 * k]; g[S.w] = [g[S.s][0], g[S.s][1] + L * k]; }
+      else bendTo(g, S.s, S.h, S.e, theta, [S.e, S.w], "ab" + i, e.id === "frontraise" ? face : Math.sign(g[S.s][0] - cx) || (i ? 1 : -1));
+    }
+  }
+  return g;
+}
+function draw(lm, o = {}) {
   const dpr = window.devicePixelRatio || 1, Wd = overlay.width = overlay.clientWidth * dpr, H = overlay.height = overlay.clientHeight * dpr;
   ctx.clearRect(0, 0, Wd, H); if (!lm) return;
   const vw = video.videoWidth || 640, vh = video.videoHeight || 480, sc = Math.max(Wd / vw, H / vh), ox = (Wd - vw * sc) / 2, oy = (H - vh * sc) / 2;
-  const P = p => [ox + p.x * vw * sc, oy + p.y * vh * sc];
-  ctx.lineWidth = 4 * dpr; ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineCap = "round";
-  for (const [a, b] of BONES) {
-    if ((lm[a].visibility ?? 1) < 0.3 || (lm[b].visibility ?? 1) < 0.3) continue;
-    const [x1, y1] = P(lm[a]), [x2, y2] = P(lm[b]); ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  const pts = lm.map(p => [ox + p.x * vw * sc, oy + p.y * vh * sc]);
+  const vis = i => (lm[i].visibility ?? 1) >= 0.3;
+  pts.sm = [(pts[11][0] + pts[12][0]) / 2, (pts[11][1] + pts[12][1]) / 2]; pts.em = [(pts[7][0] + pts[8][0]) / 2, (pts[7][1] + pts[8][1]) / 2];
+  const P = k => pts[k];
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  // 1) 초보자 가이드 선 (하늘색 점선)
+  if (o.ghost) {
+    let g = null; try { g = o.ghost(pts); } catch (x) { g = null; }
+    if (g) {
+      ctx.save(); ctx.setLineDash([10 * dpr, 8 * dpr]); ctx.lineWidth = 7 * dpr; ctx.strokeStyle = "rgba(143,211,255,.9)"; ctx.shadowColor = "rgba(0,0,0,.35)"; ctx.shadowBlur = 6 * dpr;
+      for (const [a, b] of BONES) { if (!vis(a) || !vis(b) || !g[a] || !g[b]) continue; ctx.beginPath(); ctx.moveTo(g[a][0], g[a][1]); ctx.lineTo(g[b][0], g[b][1]); ctx.stroke(); }
+      ctx.setLineDash([]); ctx.fillStyle = C_GUIDE;
+      for (const i of [13, 14, 15, 16, 23, 24, 25, 26, 27, 28]) if (vis(i) && g[i]) { ctx.beginPath(); ctx.arc(g[i][0], g[i][1], 5 * dpr, 0, 7); ctx.fill(); }
+      ctx.restore();
+    }
+  }
+  if (o.line) { // 플랭크: 어깨-발목 일직선 가이드
+    const a = [(pts[11][0] + pts[12][0]) / 2, (pts[11][1] + pts[12][1]) / 2], b = [(pts[27][0] + pts[28][0]) / 2, (pts[27][1] + pts[28][1]) / 2];
+    ctx.save(); ctx.setLineDash([10 * dpr, 8 * dpr]); ctx.lineWidth = 7 * dpr; ctx.strokeStyle = "rgba(143,211,255,.9)"; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); ctx.restore();
+  }
+  // 2) 내 몸 선: 틀린 부위는 빨강, 나머지는 기본색
+  const red = new Set(); for (const k of o.bad || []) for (const sgm of (ERR_SEG[k] || [])) for (const [a, b] of SEG[sgm]) red.add(a + "-" + b);
+  const bones = BONES.concat(o.bad && o.bad.includes("head") ? [["sm", "em"]] : []);
+  ctx.lineWidth = 5 * dpr;
+  for (const [a, b] of bones) {
+    if (typeof a === "number" && (!vis(a) || !vis(b))) continue;
+    const isRed = red.has(a + "-" + b);
+    ctx.strokeStyle = isRed ? C_RED : (o.base || C_WHITE); ctx.lineWidth = (isRed ? 8 : 5) * dpr;
+    ctx.beginPath(); ctx.moveTo(P(a)[0], P(a)[1]); ctx.lineTo(P(b)[0], P(b)[1]); ctx.stroke();
+  }
+  ctx.fillStyle = o.base || C_WHITE;
+  for (const i of [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]) if (vis(i)) { ctx.beginPath(); ctx.arc(pts[i][0], pts[i][1], 4.5 * dpr, 0, 7); ctx.fill(); }
+  // 3) 빨간 부위 옆에 이름표 (화면이 좌우 반전돼 있어서 글자만 다시 뒤집어 씀)
+  if (o.bad && o.bad.length) {
+    const k = o.bad[0], sgm = (ERR_SEG[k] || [])[0];
+    if (sgm) {
+      const [a, b] = SEG[sgm][sgm === "torso" ? 1 : 0], m2 = [(P(a)[0] + P(b)[0]) / 2, (P(a)[1] + P(b)[1]) / 2];
+      const t = ERR_KO[k] || "자세 확인"; ctx.save(); ctx.translate(m2[0], m2[1]); ctx.scale(-1, 1);
+      ctx.font = `800 ${15 * dpr}px Pretendard, system-ui, sans-serif`; const w = ctx.measureText(t).width + 16 * dpr, h = 26 * dpr;
+      ctx.fillStyle = C_RED; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(10 * dpr, -h / 2, w, h, 8 * dpr) : ctx.rect(10 * dpr, -h / 2, w, h); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.textBaseline = "middle"; ctx.fillText(t, 18 * dpr, 1 * dpr); ctx.restore();
+    }
   }
 }
 function handle(res, now) {
+  if (phase === "demo") return; // 시범 중에는 시범 화면만 그림
   const lm = res && res.landmarks && res.landmarks[0], wl = res && res.worldLandmarks && res.worldLandmarks[0];
   const ok = !!(lm && wl && visibleEnough(lm));
-  draw(lm, phase === "active" ? (rep ? "#FFE14D" : "#1FA971") : "#FFFFFF");
   if (!ok) {
+    draw(lm, { base: C_WHITE });
+    if (phase === "active") {
+      if (!lostSince) lostSince = now;
+      if (now - lostSince > 500) {
+        const miss = missingParts(lm);
+        if (!miss) setCap("사람이 안 보여요", "화면 안에 들어와 주세요 · 몸이 보여야 횟수를 셀 수 있어요");
+        else {
+          const names = miss.map(k => PART_KO[k]).join("·");
+          const low = miss.some(k => k === "ankle" || k === "knee"), arm = miss.some(k => k === "wrist" || k === "elbow");
+          setCap(`${names}이(가) 안 보여요`, (low ? "휴대폰을 뒤로 조금 더 멀리 두거나 아래쪽이 보이게 기울여 주세요" : arm ? "팔이 화면 밖이거나 몸에 가려졌어요. 몸을 살짝 비스듬히 돌려 주세요" : "휴대폰을 조금 더 멀리 두세요") + " · 안 보이는 동안은 세지 않아요");
+        }
+      }
+    } else hideCap();
     if (phase === "active" && now - visibleAt > 2500) {
       setBadge("몸 전체가 보이게 해주세요", "bad");
       if (now - lostSaidAt > 9000) { lostSaidAt = now; scold("lost", "어이!"); }
@@ -1620,14 +1893,30 @@ function handle(res, now) {
     } else if (phase !== "active") setBadge("몸 전체가 보이게 해주세요");
     return;
   }
-  visibleAt = now;
+  visibleAt = now; lostSince = 0;
   const m = metrics(wl, lm);
   updateViewChip();
   if (!sm) sm = { ...m }; else for (const k in m) sm[k] = (m[k] == null || sm[k] == null) ? m[k] : sm[k] * 0.45 + m[k] * 0.55;
   if (phase === "active") {
+    const dt = ghostLast ? Math.min(0.2, (now - ghostLast) / 1000) : 0; ghostLast = now;
+    const ready = ex.hold ? ex.pose(sm) : (!!rep || ex.pose(sm));
+    if (guideMode() === "beg") {
+      if (!ex.hold) {
+        ghostInfo = ghostTheta(ex, dt, ready);
+        const gp = Math.max(0, Math.min(1, ghostInfo.u)), up = Math.max(0, Math.min(1, depthPct(ex, sm[ex.metric])));
+        ghostHint = !ready ? "" : up - gp > 0.35 ? "가이드보다 빨라요. 점선에 맞춰 천천히" : gp - up > 0.35 ? "가이드가 앞서가요. 점선을 따라오세요" : "가이드 선과 잘 맞고 있어요";
+      } else ghostHint = "";
+    }
     if (ex.hold) updateHold(sm, now);
-    else { if (!rep) setBadge(ex.pose(sm) ? `${ex.name} 하세요` : `${ex.name} 시작 자세를 잡아 주세요`, "good"); else setBadge("동작 중", "good"); updateRep(sm, now); }
-  } else if (phase === "idle") setBadge("준비됐어요. 운동 시작을 누르세요", "good");
+    else { setBadge(ready ? `${ex.name} 인식 중` : `${ex.name} 준비 자세 대기`, "good"); updateRep(sm, now); if (phase === "active") renderCap(sm, now); else hideCap(); }
+    if (guideMode() === "beg") {
+      const close = ex.hold ? ready && sm.body >= 158 : ghostInfo && Math.abs(sm[ex.metric] - ghostInfo.theta) < 20;
+      draw(lm, ex.hold ? { line: true, base: close ? C_GREEN : C_WHITE } : { ghost: pts => ghostPose(pts, ex, ghostInfo ? ghostInfo.theta : ex.end), base: ready && close ? C_GREEN : C_WHITE });
+    } else {
+      const bad = liveErrors(sm, now);
+      draw(lm, { base: ready ? C_GREEN : C_WHITE, bad });
+    }
+  } else { hideCap(); draw(lm, { base: C_WHITE }); if (phase === "idle") setBadge("준비됐어요. 운동 시작을 누르세요", "good"); }
 }
 function loop() {
   if (!camOn) return;
@@ -1771,9 +2060,213 @@ function bindSeg(key) {
   wrap.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; settings[key] = b.dataset.val; saveSettings(); render(); });
   render();
 }
-bindSeg("mode"); bindSeg("strict"); bindSeg("wmode"); bindSeg("useRef");
+if (!settings.guide) settings.guide = recPrefs().level === "beg" ? "beg" : "pro";
+bindSeg("guide"); bindSeg("mode"); bindSeg("strict"); bindSeg("wmode"); bindSeg("useRef");
 document.querySelector('.seg[data-key="wmode"]').addEventListener("click", () => { if (phase === "idle" || phase === "done") renderPicker(); });
 renderPicker();
+
+
+// ===== 초보자 자세 시범: 앞모습 1회 + 옆모습 1회를 보여주며 자막·음성으로 디테일 설명 =====
+// 자세는 3D 좌표 [옆(lat), 높이(y), 앞(fwd)] 로 정의. 키 높이 = 1. 왼쪽 몸은 lat 음수, 오른쪽은 좌우 대칭
+// side(옆모습 좌표 [앞, 높이]) + lat(좌우 폭) 으로 만들고, 앞모습/옆모습은 같은 3D 자세를 돌려서 보여줌
+const DEMO_B = { a: [0, .88], k: [.005, .70], h: [0, .52], s: [0, .30], e: [0, .42], w: [.005, .53], ear: [-.01, .22], n: [.025, .235] };
+const LAT0 = { a: -.05, k: -.05, h: -.045, s: -.085, e: -.10, w: -.10, ear: -.03 };
+const DKEY = { a: [27, 28], k: [25, 26], h: [23, 24], s: [11, 12], e: [13, 14], w: [15, 16], ear: [7, 8] };
+function P3(side, lat = {}, Rside = null, Rlat = null) {
+  const S = { ...DEMO_B, ...side }, SR = { ...S, ...(Rside || {}) }, P = [];
+  for (const k in DKEY) {
+    P[DKEY[k][0]] = [lat[k] ?? LAT0[k], S[k][1], S[k][0]];
+    P[DKEY[k][1]] = [-((Rlat && Rlat[k]) ?? lat[k] ?? LAT0[k]), SR[k][1], SR[k][0]];
+  }
+  P[0] = [0, S.n[1], S.n[0]]; return P;
+}
+// 앞모습 기준으로 정의할 때: front [lat, 높이], fwd {관절: 앞쪽 거리}
+const FRONT0 = { a: [-.045, .88], k: [-.045, .70], h: [-.045, .52], s: [-.085, .30], e: [-.10, .42], w: [-.10, .53], ear: [-.03, .22], n: [0, .235] };
+function F3(front, fwd = {}) {
+  const F = { ...FRONT0, ...front }, P = [];
+  for (const k in DKEY) { const f = fwd[k] ?? (k === "ear" ? -.01 : 0); P[DKEY[k][0]] = [F[k][0], F[k][1], f]; P[DKEY[k][1]] = [-F[k][0], F[k][1], f]; }
+  P[0] = [0, F.n[1], fwd.n ?? .025]; return P;
+}
+const DEMO_POSE = {
+  squat:     [P3({ e: [.03, .41], w: [.08, .48] }, { a: -.075, k: -.075, e: -.09, w: -.08 }),
+              P3({ k: [.10, .75], h: [-.08, .66], s: [.06, .45], e: [.16, .47], w: [.26, .46], ear: [.10, .38], n: [.135, .395] }, { a: -.075, k: -.095, h: -.055, e: -.08, w: -.065 })],
+  lunge:     [P3({ a: [.15, .88], k: [.12, .70] }, {}, { a: [-.17, .88], k: [-.09, .71] }),
+              P3({ a: [.15, .88], k: [.16, .67], h: [0, .66], s: [0, .44], e: [0, .56], w: [.005, .67], ear: [-.01, .36], n: [.025, .375] }, {}, { a: [-.19, .87], k: [-.05, .85] })],
+  rdl:       [P3({}, { e: -.11, w: -.11 }), P3({ k: [.03, .70], h: [-.09, .53], s: [.12, .43], e: [.12, .55], w: [.125, .66], ear: [.20, .40], n: [.235, .415] }, { e: -.11, w: -.11 })],
+  deadlift:  [P3({}, { e: -.11, w: -.11 }), P3({ k: [.07, .73], h: [-.10, .62], s: [.10, .49], e: [.10, .61], w: [.105, .72], ear: [.18, .45], n: [.215, .465] }, { e: -.11, w: -.11, k: -.06 })],
+  curl:      [P3({}, { e: -.10, w: -.10 }), P3({ e: [.005, .42], w: [.08, .34] }, { e: -.10, w: -.10 })],
+  hammer:    [P3({}, { e: -.10, w: -.10 }), P3({ e: [.005, .42], w: [.08, .34] }, { e: -.10, w: -.095 })],
+  frontraise:[P3({}, { e: -.10, w: -.09 }), P3({ e: [.12, .31], w: [.23, .315] }, { e: -.09, w: -.08 })],
+  ohext:     [P3({ e: [.015, .18], w: [-.07, .23] }, { e: -.06, w: -.02 }), P3({ e: [.015, .18], w: [.02, .07] }, { e: -.06, w: -.025 })],
+  pushdown:  [P3({ s: [.02, .30], e: [.01, .42], w: [.11, .37], ear: [.015, .22], n: [.05, .235] }, { e: -.10, w: -.07 }), P3({ s: [.02, .30], e: [.01, .42], w: [.03, .53], ear: [.015, .22], n: [.05, .235] }, { e: -.10, w: -.08 })],
+  row:       [P3({ k: [.04, .71], h: [-.03, .55], s: [.15, .40], e: [.15, .52], w: [.155, .63], ear: [.21, .34], n: [.245, .355] }, { e: -.11, w: -.11 }),
+              P3({ k: [.04, .71], h: [-.03, .55], s: [.15, .40], e: [.04, .45], w: [.06, .56], ear: [.21, .34], n: [.245, .355] }, { e: -.13, w: -.11 })],
+  dbrow:     [P3({ k: [.05, .71], h: [-.05, .52], s: [.17, .46], e: [.17, .58], w: [.175, .69], ear: [.24, .42], n: [.275, .435] }, { e: -.10, w: -.10 }),
+              P3({ k: [.05, .71], h: [-.05, .52], s: [.17, .46], e: [.06, .43], w: [.07, .54], ear: [.24, .42], n: [.275, .435] }, { e: -.11, w: -.10 }, { e: [.17, .58], w: [.175, .69] })],
+  pushup:    [P3({ a: [-.44, .78], k: [-.27, .74], h: [-.10, .70], s: [.20, .65], e: [.20, .765], w: [.20, .88], ear: [.27, .63], n: [.31, .645] }, { s: -.09, e: -.14, w: -.14, a: -.045, k: -.05 }),
+              P3({ a: [-.44, .80], k: [-.27, .80], h: [-.10, .80], s: [.21, .79], e: [.11, .80], w: [.20, .88], ear: [.28, .77], n: [.32, .785] }, { s: -.09, e: -.20, w: -.14, a: -.045, k: -.05 })],
+  bench:     [P3({ a: [-.36, .82], k: [-.32, .60], h: [-.16, .64], s: [.12, .62], e: [.12, .49], w: [.12, .36], ear: [.20, .60], n: [.22, .585] }, { e: -.13, w: -.14, a: -.10, k: -.09 }),
+              P3({ a: [-.36, .82], k: [-.32, .60], h: [-.16, .64], s: [.12, .62], e: [0, .67], w: [.02, .54], ear: [.20, .60], n: [.22, .585] }, { e: -.18, w: -.14, a: -.10, k: -.09 })],
+  dips:      [P3({ a: [-.08, .86], k: [.02, .74], h: [0, .58], s: [0, .34], e: [0, .45], w: [0, .56], ear: [-.005, .26], n: [.03, .275] }, { s: -.09, e: -.115, w: -.12, a: -.04, k: -.045 }),
+              P3({ a: [-.07, .96], k: [.03, .86], h: [-.01, .70], s: [.04, .46], e: [-.07, .47], w: [0, .56], ear: [.05, .38], n: [.085, .395] }, { s: -.09, e: -.13, w: -.12, a: -.04, k: -.045 })],
+  legpress:  [P3({ a: [.37, .47], k: [.18, .55], h: [0, .66], s: [-.18, .48], e: [-.10, .56], w: [-.02, .62], ear: [-.22, .41], n: [-.19, .40] }, { a: -.08, k: -.09, w: -.13, e: -.12 }),
+              P3({ a: [.24, .40], k: [.10, .46], h: [0, .66], s: [-.18, .48], e: [-.10, .56], w: [-.02, .62], ear: [-.22, .41], n: [-.19, .40] }, { a: -.08, k: -.10, w: -.13, e: -.12 })],
+  legext:    [P3({ a: [.20, .80], k: [.20, .60], h: [0, .60], s: [-.03, .36], e: [-.02, .48], w: [.04, .58], ear: [-.035, .28], n: [0, .29] }, { a: -.06, k: -.06, w: -.13, e: -.12 }),
+              P3({ a: [.39, .56], k: [.20, .60], h: [0, .60], s: [-.03, .36], e: [-.02, .48], w: [.04, .58], ear: [-.035, .28], n: [0, .29] }, { a: -.06, k: -.06, w: -.13, e: -.12 })],
+  hipthrust: [P3({ a: [.22, .84], k: [.17, .64], h: [-.02, .76], s: [-.25, .58], e: [-.30, .66], w: [-.22, .70], ear: [-.33, .55], n: [-.31, .52] }, { a: -.09, k: -.10, e: -.13, w: -.12 }),
+              P3({ a: [.22, .84], k: [.18, .60], h: [-.02, .60], s: [-.25, .58], e: [-.30, .66], w: [-.22, .70], ear: [-.33, .55], n: [-.31, .52] }, { a: -.09, k: -.11, e: -.13, w: -.12 })],
+  plank:     [P3({ a: [-.44, .82], k: [-.27, .785], h: [-.10, .75], s: [.20, .72], e: [.20, .86], w: [.31, .86], ear: [.27, .70], n: [.31, .715] }, { e: -.07, w: -.04, a: -.04, k: -.045 }),
+              P3({ a: [-.44, .82], k: [-.27, .785], h: [-.10, .75], s: [.20, .72], e: [.20, .86], w: [.31, .86], ear: [.27, .70], n: [.31, .715] }, { e: -.07, w: -.04, a: -.04, k: -.045 })],
+  press:     [F3({ e: [-.14, .31], w: [-.14, .20] }, { e: .03, w: .02 }), F3({ e: [-.10, .19], w: [-.085, .08] }, { e: .01, w: .01 })],
+  raise:     [F3({ e: [-.10, .42], w: [-.10, .53] }, { w: .02 }), F3({ e: [-.18, .31], w: [-.28, .32] }, { e: .04, w: .06 })],
+  jjack:     [F3({ a: [-.03, .88], k: [-.035, .70], e: [-.10, .42], w: [-.10, .53] }), F3({ a: [-.17, .88], k: [-.10, .70], e: [-.15, .20], w: [-.10, .09] }, { k: .02 })],
+  latpull:   [F3({ a: [-.07, .86], k: [-.07, .64], h: [-.05, .62], s: [-.085, .40], e: [-.14, .29], w: [-.16, .18], ear: [-.03, .32], n: [0, .335] }, { a: .21, k: .19, s: -.02, ear: -.03, n: 0, w: .03, e: .01 }),
+              F3({ a: [-.07, .86], k: [-.07, .64], h: [-.05, .62], s: [-.085, .40], e: [-.17, .48], w: [-.16, .37], ear: [-.03, .32], n: [0, .335] }, { a: .21, k: .19, s: -.04, ear: -.05, n: -.02, w: .06, e: -.02 })],
+  pullup:    [F3({ a: [-.04, .90], k: [-.04, .74], h: [-.04, .58], s: [-.085, .36], e: [-.13, .25], w: [-.15, .14], ear: [-.03, .28], n: [0, .295] }, { k: .03, a: -.05 }),
+              F3({ a: [-.04, .76], k: [-.04, .60], h: [-.04, .44], s: [-.085, .22], e: [-.18, .27], w: [-.15, .14], ear: [-.03, .14], n: [0, .155] }, { k: .03, a: -.05, s: .02 })],
+};
+// [준비, 앞모습 3줄, 옆모습 3줄]. 각 줄은 [설명, 강조할 부위]
+const DEMO_TXT = {
+  squat: [["발은 어깨너비, 발끝은 살짝 바깥으로 서요", "a"], [["엉덩이를 뒤로 빼며 2초 동안 천천히 앉아요", "h"], ["무릎은 발끝 방향으로 벌려요. 안으로 모이면 안 돼요", "k"], ["양발에 체중을 똑같이 싣고 일어나요", "a"]], [["상체는 살짝 앞으로, 엉덩이는 뒤로 빼요", "back"], ["허벅지가 바닥과 평행할 때까지, 발뒤꿈치는 바닥에", "k"], ["발뒤꿈치로 밀며 무릎과 엉덩이를 끝까지 펴요", "h"]]],
+  lunge: [["발은 골반너비, 한 발을 크게 앞으로 내딛어요", "a"], [["상체를 곧게 세우고 천천히 내려가요", "back"], ["앞 무릎이 안으로 꺾이지 않게 발끝 방향으로", "k"], ["골반이 한쪽으로 기울지 않게 수평 유지", "h"]], [["몸을 수직으로 내려요", "back"], ["앞 무릎 90도, 뒷무릎은 바닥 바로 위까지", "k"], ["앞발 뒤꿈치로 밀며 올라와요", "a"]]],
+  rdl: [["발은 골반너비, 바를 허벅지 앞에 두고 무릎을 살짝 굽혀요", "k"], [["바를 다리에 붙인 채 내려요", "w"], ["양쪽 어깨와 바가 수평을 유지해요", "s"], ["무릎이 안으로 모이지 않게", "k"]], [["엉덩이를 뒤로 밀며 2초 동안 천천히 숙여요", "h"], ["허리는 일자, 허벅지 뒤가 당길 때까지", "back"], ["엉덩이를 앞으로 밀며 일어나요", "h"]]],
+  deadlift: [["발은 골반너비, 바를 정강이 가까이 두고 서요", "a"], [["손은 다리 바로 바깥을 잡아요", "w"], ["무릎은 발끝 방향, 바는 몸 가운데로", "k"], ["양쪽 어깨가 같은 높이로 올라와요", "s"]], [["엉덩이를 뒤로 빼며 천천히 내려요", "h"], ["등은 일자, 바는 다리를 스치듯이", "back"], ["다리로 바닥을 밀며 끝까지 서요", "h"]]],
+  pushup: [["손은 어깨너비보다 조금 넓게, 몸은 일자로", "w"], [["팔꿈치는 몸통과 45도로 접어요", "e"], ["양팔이 같은 속도로 내려가요", "s"], ["손바닥 전체로 바닥을 밀어요", "w"]], [["머리부터 발끝까지 일자 유지", "back"], ["가슴이 바닥에 닿기 직전까지 2초 동안 천천히", "s"], ["엉덩이가 처지지 않게, 팔은 끝까지 펴요", "h"]]],
+  bench: [["벤치에 눕고 어깨뼈를 모아 가슴을 내밀어요", "s"], [["손은 어깨너비보다 조금 넓게 잡아요", "w"], ["팔꿈치는 몸통과 45도, 너무 벌리지 않아요", "e"], ["양손이 같은 높이로 밀어 올려요", "w"]], [["바를 가슴 중앙으로 2초 동안 천천히", "w"], ["손목은 팔뚝 위에 곧게", "w"], ["엉덩이는 벤치에 붙인 채 밀어 올려요", "h"]]],
+  press: [["덤벨을 어깨 높이에, 손바닥은 앞을 향해요", "w"], [["팔꿈치는 손목 바로 아래에", "e"], ["머리 위로 밀어 올리며 양손이 살짝 가까워져요", "w"], ["2초 동안 천천히 어깨 높이로 내려요", "s"]], [["덤벨은 귀 바로 위로 올라가요", "w"], ["허리가 뒤로 꺾이지 않게 배에 힘", "back"], ["팔이 거의 펴질 때까지 올렸다 천천히 내려요", "e"]]],
+  raise: [["덤벨을 몸 옆에, 팔꿈치는 살짝 굽혀요", "e"], [["팔을 옆으로 어깨 높이까지 들어요", "w"], ["어깨가 귀 쪽으로 올라가지 않게", "s"], ["2초 동안 천천히 내려요", "w"]], [["팔은 몸보다 살짝 앞쪽으로 들어요", "e"], ["상체를 흔들어 반동 쓰지 않아요", "back"], ["손목이 팔꿈치보다 높아지지 않게", "w"]]],
+  curl: [["팔을 아래로 펴고 팔꿈치를 옆구리에 붙여요", "e"], [["양팔을 같은 속도로 들어 올려요", "w"], ["손목은 꺾지 말고 곧게", "w"], ["팔꿈치가 옆으로 벌어지지 않게", "e"]], [["팔꿈치는 고정, 앞으로 나가지 않게", "e"], ["몸을 뒤로 젖혀 반동 쓰지 않아요", "back"], ["2초 동안 천천히 끝까지 펴며 내려요", "w"]]],
+  hammer: [["손바닥이 마주 보게 덤벨을 잡아요", "w"], [["양팔을 같은 속도로 들어 올려요", "w"], ["엄지가 어깨를 향할 때까지", "w"], ["팔꿈치가 옆으로 벌어지지 않게", "e"]], [["팔꿈치는 옆구리에 붙인 채 고정", "e"], ["몸을 흔들어 반동 쓰지 않아요", "back"], ["2초 동안 천천히 내려요", "w"]]],
+  row: [["무릎을 살짝 굽히고 허리를 펴서 상체를 45도 숙여요", "back"], [["팔꿈치를 몸 가까이로 당겨요", "e"], ["양쪽 어깨가 같은 높이를 유지해요", "s"], ["손은 어깨너비로 잡아요", "w"]], [["팔꿈치를 뒤로 당겨 배꼽 쪽으로", "e"], ["날개뼈를 꽉 모으고 상체는 고정", "back"], ["2초 동안 천천히 팔을 펴며 내려요", "w"]]],
+  dbrow: [["한 손과 무릎을 벤치에 대고 등을 평평하게", "back"], [["덤벨은 몸 옆에 붙여 당겨요", "w"], ["어깨가 돌아가지 않게 양쪽 수평", "s"], ["팔꿈치는 몸에서 멀어지지 않게", "e"]], [["덤벨을 골반 쪽으로 당겨요", "e"], ["팔꿈치가 등보다 위로 올라가게", "e"], ["2초 동안 천천히 팔을 펴며 내려요", "w"]]],
+  latpull: [["허벅지를 패드에 고정하고 바를 넓게 잡아요", "w"], [["팔꿈치를 옆구리로 끌어내려요", "e"], ["바는 쇄골 높이까지", "w"], ["어깨가 귀 쪽으로 올라가지 않게", "s"]], [["가슴을 펴고 상체는 살짝만 뒤로", "back"], ["바는 얼굴 앞을 지나 가슴으로", "w"], ["2초 동안 천천히 팔을 펴며 올려요", "e"]]],
+  pullup: [["바를 어깨너비보다 넓게 잡고 매달려요", "w"], [["팔꿈치를 아래로 끌어내리며 올라가요", "e"], ["턱이 바 위로 올라갈 때까지", "head"], ["양팔에 같은 힘을 줘요", "s"]], [["다리를 흔들어 반동 쓰지 않아요", "a"], ["가슴을 바 쪽으로 내밀어요", "s"], ["2초 동안 천천히 팔을 끝까지 펴며 내려와요", "e"]]],
+  ohext: [["덤벨을 두 손으로 잡고 머리 위로 들어요", "w"], [["팔꿈치는 벌어지지 않게 귀 옆에", "e"], ["위로 쭉 펴요", "w"], ["2초 동안 천천히 머리 뒤로 내려요", "w"]], [["팔꿈치는 천장을 향해 고정", "e"], ["허리가 꺾이지 않게 배에 힘", "back"], ["팔이 끝까지 펴질 때까지 올려요", "w"]]],
+  pushdown: [["손잡이를 잡고 팔꿈치를 옆구리에 붙여요", "e"], [["양손이 같은 속도로 내려가요", "w"], ["팔꿈치가 옆으로 벌어지지 않게", "e"], ["팔을 끝까지 펴요", "w"]], [["상체는 살짝 숙인 채 고정", "back"], ["팔꿈치는 앞뒤로 움직이지 않아요", "e"], ["2초 동안 천천히 가슴 높이로 올려요", "w"]]],
+  frontraise: [["덤벨을 허벅지 앞에 두고 서요", "w"], [["양팔을 어깨너비로 나란히 들어요", "w"], ["어깨가 으쓱 올라가지 않게", "s"], ["2초 동안 천천히 내려요", "w"]], [["팔을 앞으로 어깨 높이까지", "w"], ["몸을 뒤로 젖히며 반동 쓰지 않아요", "back"], ["팔꿈치는 살짝만 굽혀요", "e"]]],
+  legpress: [["등과 엉덩이를 등받이에 붙이고 발은 어깨너비", "a"], [["무릎은 발끝 방향으로", "k"], ["양발로 똑같이 밀어요", "a"], ["무릎이 안으로 모이지 않게", "k"]], [["무릎을 2초 동안 천천히 가슴 쪽으로", "k"], ["엉덩이가 등받이에서 뜨지 않게", "h"], ["밀 때 무릎을 완전히 잠그지 않아요", "k"]]],
+  legext: [["등을 기대고 발목을 패드 뒤에 걸어요", "a"], [["양다리를 같은 속도로 펴요", "k"], ["발끝은 정면을 향해요", "a"], ["손잡이를 잡아 몸을 고정해요", "w"]], [["무릎을 힘차게 쭉 펴요", "k"], ["엉덩이가 의자에서 뜨지 않게", "h"], ["2초 동안 천천히 내려요", "a"]]],
+  hipthrust: [["등 윗부분을 벤치에 대고 무릎을 세워요", "s"], [["무릎은 발끝 방향으로 벌려요", "k"], ["양쪽 골반이 같은 높이로 올라와요", "h"], ["발은 골반너비보다 조금 넓게", "a"]], [["엉덩이를 힘차게 밀어 올려요", "h"], ["몸통과 허벅지가 일자가 될 때까지", "back"], ["허리 말고 엉덩이 힘으로, 천천히 내려요", "h"]]],
+  dips: [["평행봉을 짚고 팔을 펴서 몸을 들어요", "w"], [["팔꿈치가 너무 벌어지지 않게", "e"], ["어깨가 귀 쪽으로 올라가지 않게", "s"], ["양팔로 똑같이 밀어요", "w"]], [["상체를 살짝 앞으로 기울여요", "back"], ["팔꿈치를 뒤로 접으며 90도까지 천천히", "e"], ["손바닥으로 밀며 팔을 끝까지 펴요", "w"]]],
+  jjack: [["발을 모으고 팔은 내려요", "a"], [["점프하며 팔과 다리를 동시에 벌려요", "w"], ["손이 머리 위에서 만나게", "w"], ["다시 점프하며 모아요", "a"]], [["발 앞쪽으로 가볍게 착지해요", "a"], ["무릎은 살짝 굽혀 충격을 흡수해요", "k"], ["상체는 곧게, 리듬 있게 숨 쉬어요", "back"]]],
+  plank: [["팔꿈치를 어깨 바로 아래에 대고 엎드려요", "e"], [["팔꿈치는 어깨너비, 양손은 가볍게 모아요", "w"], ["어깨가 귀 쪽으로 올라가지 않게", "s"], ["발은 골반너비로 벌려요", "a"]], [["머리부터 발끝까지 일자로", "back"], ["엉덩이가 처지거나 들리지 않게 배에 힘", "h"], ["숨은 참지 말고 천천히 쉬어요", "back"]]],
+};
+const FOCUS = { a: [[27, 28], "발"], k: [[25, 26], "무릎"], h: [[23, 24], "엉덩이"], s: [[11, 12], "어깨"], e: [[13, 14], "팔꿈치"], w: [[15, 16], "손목"], head: [["hd"], "머리"], back: [["bk"], "허리·등"] };
+const DEMO_EDGES = [[23, 25], [25, 27], [24, 26], [26, 28], [23, 11], [24, 12], [11, 13], [13, 15], [12, 14], [14, 16], [11, 7], [12, 8], [11, 0]];
+// 3D 자세를 yaw(0 = 앞모습, 90° = 옆모습)만큼 돌려서 화면 좌표와 깊이로
+function demoProject(P, yaw) {
+  const c = Math.cos(yaw), s2 = Math.sin(yaw), xy = [], d = [];
+  P.forEach((p, i) => { if (!p) return; xy[i] = [p[0] * c + p[2] * s2, p[1]]; d[i] = p[2] * c - p[0] * s2; });
+  return { xy, d };
+}
+// 두 3D 자세 사이를 뼈 방향(3D)으로 보간 → 팔다리 길이가 줄지 않고, 실제처럼 앞쪽으로 돌아가며 움직임
+function demoLerp3(A, B, u) {
+  const P = [];
+  for (const i of [23, 24]) P[i] = A[i].map((v, k) => v + (B[i][k] - v) * u);
+  for (const [p, c] of DEMO_EDGES) {
+    const va = A[c].map((v, k) => v - A[p][k]), vb = B[c].map((v, k) => v - B[p][k]);
+    const la = Math.hypot(...va) || 1e-6, lb = Math.hypot(...vb) || 1e-6, na = va.map(v => v / la), nb = vb.map(v => v / lb);
+    const dot = Math.max(-1, Math.min(1, na[0] * nb[0] + na[1] * nb[1] + na[2] * nb[2])), om = Math.acos(dot);
+    let dir;
+    if (om < 1e-3) dir = na;
+    else if (Math.PI - om < 0.05) { // 정반대 방향이면 앞쪽(+fwd)을 거쳐 돌게
+      const mid = [0, 0, 1], t = u < .5 ? u * 2 : (u - .5) * 2, from = u < .5 ? na : mid, to = u < .5 ? mid : nb;
+      dir = from.map((v, k) => v * (1 - t) + to[k] * t); const l = Math.hypot(...dir) || 1; dir = dir.map(v => v / l);
+    } else { const s1 = Math.sin((1 - u) * om) / Math.sin(om), s2 = Math.sin(u * om) / Math.sin(om); dir = na.map((v, k) => v * s1 + nb[k] * s2); }
+    const l = la + (lb - la) * u; P[c] = P[p].map((v, k) => v + dir[k] * l);
+  }
+  return P;
+}
+function drawDemo(P, D, focus, t) {
+  const dpr = window.devicePixelRatio || 1, Wd = overlay.width = overlay.clientWidth * dpr, H = overlay.height = overlay.clientHeight * dpr;
+  ctx.clearRect(0, 0, Wd, H);
+  ctx.fillStyle = "rgba(14,16,20,.64)"; ctx.fillRect(0, 0, Wd, H);
+  const sc = H * 0.68, ox = Wd / 2, oy = H * 0.03, X = p => [ox + p[0] * sc, oy + p[1] * sc];
+  ctx.strokeStyle = "rgba(255,255,255,.18)"; ctx.lineWidth = 2 * dpr; ctx.beginPath(); ctx.moveTo(Wd * .12, oy + .905 * sc); ctx.lineTo(Wd * .88, oy + .905 * sc); ctx.stroke();
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  const bones = BONES.slice(), dv = bones.map(([a, b]) => (D[a] + D[b]) / 2), lo = Math.min(...dv), hi = Math.max(...dv);
+  const order = bones.map((b, i) => [b, dv[i]]).sort((x, y) => x[1] - y[1]);
+  // 먼 쪽은 흐리고 얇게, 가까운 쪽은 진하고 굵게 → 입체감
+  for (const [[a, b], dd] of order) {
+    const n = hi - lo > .02 ? (dd - lo) / (hi - lo) : 1, side = (a === 11 && b === 12) || (a === 23 && b === 24);
+    ctx.strokeStyle = `rgba(143,211,255,${(0.62 + 0.38 * n).toFixed(2)})`; ctx.lineWidth = (side ? 6 : 8 + 3 * n) * dpr;
+    const [x1, y1] = X(P[a]), [x2, y2] = X(P[b]); ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  }
+  const hcP = [(P[7][0] + P[8][0]) / 2, (P[7][1] + P[8][1]) / 2], hc = X(hcP), hr = .055 * sc;
+  ctx.fillStyle = C_GUIDE; ctx.beginPath(); ctx.arc(hc[0], hc[1], hr, 0, 7); ctx.fill();
+  ctx.fillStyle = "#fff"; for (const i of [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]) { const [x, y] = X(P[i]); ctx.beginPath(); ctx.arc(x, y, 4.5 * dpr, 0, 7); ctx.fill(); }
+  // 지금 설명하는 부위를 노란 원으로 강조
+  if (focus && FOCUS[focus]) {
+    const [ids, name] = FOCUS[focus], pulse = 1 + 0.18 * Math.sin(t * 6);
+    ctx.save(); ctx.strokeStyle = "#FFD84D"; ctx.lineWidth = 4 * dpr; ctx.shadowColor = "rgba(255,216,77,.7)"; ctx.shadowBlur = 12 * dpr;
+    let anchor;
+    if (ids[0] === "bk") {
+      const sm = X([(P[11][0] + P[12][0]) / 2, (P[11][1] + P[12][1]) / 2]), hm = X([(P[23][0] + P[24][0]) / 2, (P[23][1] + P[24][1]) / 2]);
+      ctx.lineWidth = 16 * dpr; ctx.strokeStyle = "rgba(255,216,77,.55)"; ctx.beginPath(); ctx.moveTo(sm[0], sm[1]); ctx.lineTo(hm[0], hm[1]); ctx.stroke();
+      anchor = [(sm[0] + hm[0]) / 2, (sm[1] + hm[1]) / 2];
+    } else if (ids[0] === "hd") { ctx.beginPath(); ctx.arc(hc[0], hc[1], hr * 1.5 * pulse, 0, 7); ctx.stroke(); anchor = [hc[0], hc[1] - hr]; }
+    else {
+      const pts = ids.map(i => X(P[i]));
+      for (const p of pts) { ctx.beginPath(); ctx.arc(p[0], p[1], 15 * dpr * pulse, 0, 7); ctx.stroke(); }
+      anchor = pts.reduce((m, p) => p[0] > m[0] ? p : m, pts[0]);
+    }
+    ctx.restore();
+    // 부위 이름표 (화면이 좌우 반전돼 있어서 글자만 다시 뒤집음)
+    ctx.save(); ctx.translate(anchor[0], anchor[1]); ctx.scale(-1, 1);
+    ctx.font = `800 ${15 * dpr}px Pretendard, system-ui, sans-serif`; const w = ctx.measureText(name).width + 16 * dpr, h = 26 * dpr;
+    ctx.fillStyle = "#FFD84D"; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-w - 22 * dpr, -h / 2, w, h, 8 * dpr) : ctx.rect(-w - 22 * dpr, -h / 2, w, h); ctx.fill();
+    ctx.fillStyle = "#16181D"; ctx.textBaseline = "middle"; ctx.fillText(name, -w - 14 * dpr, 1 * dpr); ctx.restore();
+  }
+}
+let demo = null; const demoSeen = new Set();
+function demoSay(t) {
+  if (!t || settings.mode !== "voice" || !("speechSynthesis" in window)) return;
+  try { const u = new SpeechSynthesisUtterance(t); u.lang = "ko-KR"; if (koVoice) u.voice = koVoice; u.rate = 1.1; u.pitch = 1.05; speechSynthesis.speak(u); } catch (x) {}
+}
+function withDemo(next) {
+  if (guideMode() === "beg" && !demoSeen.has(ex.id) && DEMO_POSE[ex.id] && DEMO_TXT[ex.id]) runDemo(next); else next();
+}
+function runDemo(next) {
+  demoSeen.add(ex.id); hideHalmae(); hideBig();
+  const [A, B] = DEMO_POSE[ex.id], [setup, F, S] = DEMO_TXT[ex.id], hold = !!ex.hold;
+  const SU = 4.4, RA = 3.0, RH = 2.2, RB = 2.8, RT = 1.0, R = hold ? 9.9 : RA + RH + RB + RT, TURN = 2.2, END = 2.8;
+  const T1 = SU, T2 = SU + R + TURN, total = T2 + R + END, ev = [];
+  ev.push([0.2, setup[0], setup[1], "준비 자세"]);
+  const lines = (T0, L, view) => hold ? L.forEach((l, i) => ev.push([T0 + i * 3.3, l[0], l[1], view])) : [[0, 0], [1, RA], [2, RA + RH]].forEach(([i, o]) => ev.push([T0 + o, L[i][0], L[i][1], view]));
+  lines(T1, F, "앞모습");
+  ev.push([SU + R, "이번엔 옆모습으로 볼게요", null, "돌아보기"]);
+  lines(T2, S, "옆모습");
+  ev.push([T2 + R, hold ? "이제 직접 해 볼까요? 하늘색 선처럼 버텨 보세요" : "이제 직접 해 볼까요? 하늘색 점선을 따라 해 보세요", null, "직접 해 보기"]);
+  try { speechSynthesis.cancel(); } catch (x) {}
+  phase = "demo"; $("skipDemo").hidden = false; document.querySelector(".cam").classList.add("demo-on"); setBadge(`${ex.name} 자세 시범`, "good");
+  demo = { t0: performance.now(), next, said: 0 };
+  const ease = x => x * x * (3 - 2 * x);
+  const uAt = tt => hold ? 0 : tt < RA ? ease(tt / RA) : tt < RA + RH ? 1 : tt < RA + RH + RB ? 1 - ease((tt - RA - RH) / RB) : 0;
+  const frame = () => {
+    if (!demo || phase !== "demo") return;
+    const t = (performance.now() - demo.t0) / 1000;
+    while (demo.said < ev.length && t >= ev[demo.said][0]) { demoSay(ev[demo.said][1]); demo.said++; capLast = "x"; }
+    const cur = ev[Math.max(0, demo.said - 1)];
+    let yaw = 0, u = 0;
+    if (t >= T1 && t < T1 + R) u = uAt(t - T1);
+    else if (t >= T1 + R && t < T2) yaw = ease(Math.min(1, (t - T1 - R) / (TURN * 0.8))) * Math.PI / 2;
+    else if (t >= T2) { yaw = Math.PI / 2; if (t < T2 + R) u = uAt(t - T2); }
+    if (hold) u = 0;
+    const pr = demoProject(demoLerp3(A, B, u), yaw);
+    drawDemo(pr.xy, pr.d, cur[2], t);
+    const step = t < T1 ? "준비 자세" : t < T1 + R ? "앞모습 1/2" : t < T2 ? "옆으로 돌아보는 중" : t < T2 + R ? "옆모습 2/2" : "직접 해 보기";
+    setCap(cur[1], `자세 시범 · ${step}${cur[2] && FOCUS[cur[2]] ? ` · 노란 원: ${FOCUS[cur[2]][1]}` : ""}`, Math.min(1, t / total));
+    if (t >= total) { finishDemo(); return; }
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
+function finishDemo() {
+  if (!demo) return; const n = demo.next; demo = null;
+  $("skipDemo").hidden = true; hideCap(); document.querySelector(".cam").classList.remove("demo-on");
+  if (phase === "demo") n();
+}
+$("skipDemo").addEventListener("click", () => { try { speechSynthesis.cancel(); } catch (x) {} finishDemo(); });
 
 // ===== 버튼 =====
 const showError = msg => { const b = $("errorBox"); b.innerHTML = msg; b.style.display = "block"; };
@@ -1805,11 +2298,11 @@ $("goBtn").addEventListener("click", () => {
   if (settings.wmode === "routine") { routine = { ...routineById(settings.routineId), idx: 0 }; ex = exById(routine.items[0].ex); }
   else { routine = null; ex = exById(settings.exercise); }
   session = newSession(); sm = null; renderPicker(); renderHud();
-  $("goBtn").hidden = true; $("endBtn").hidden = false;
-  startCountdown(beginSet);
+  $("goBtn").hidden = true; $("endBtn").hidden = false; demoSeen.clear();
+  withDemo(() => startCountdown(beginSet));
 });
 $("endBtn").addEventListener("click", () => {
-  clearTimeout(restTimer); hideBig(); hideHalmae();
+  clearTimeout(restTimer); hideBig(); hideHalmae(); demo = null; $("skipDemo").hidden = true; hideCap(); document.querySelector(".cam").classList.remove("demo-on");
   phase = "done"; try { speechSynthesis.cancel(); } catch (e) {}
   const s = closeSession(); routine = null; renderPicker();
   if (s && window.HM) HM.afterSession("workout", s);
@@ -1818,7 +2311,7 @@ $("endBtn").addEventListener("click", () => {
 $("againBtn").addEventListener("click", () => { $("report").hidden = true; phase = "idle"; $("goBtn").hidden = !camOn; $("camBtn").hidden = camOn; renderPicker(); });
 
 // 시험용 내부 접근
-window.__wk = { frontCorrection, get camView() { return camView; }, get bodyRatio() { return bodyRatio; }, recommend, buildFeedback, showReport, metrics, updateRep, updateHold, beginSet, refFor, setRecording: on => { recording = on ? { reps: [] } : null; }, finishRecording, get recording() { return recording; }, finishSet, closeSession, loadLog, startRoutine: id => { routine = { ...routineById(id), idx: 0 }; ex = exById(routine.items[0].ex); session = newSession(); setNo = 1; log = []; }, get routine() { return routine; }, get ex() { return ex.id; }, get state() { return { phase, repCount, holdTime, setNo, log, errStreak }; }, setEx: id => { ex = exById(id); }, setPhase: p => phase = p };
+window.__wk = { runDemo, withDemo, demoProject, demoLerp3, drawDemo, DEMO_POSE, get demo() { return demo; }, ghostPose, ghostTheta, liveErrors, draw, get ghostInfo() { return ghostInfo; }, renderCap, get capText() { return [$("capMain").textContent, $("capSub").textContent, $("capWhy").hidden ? "" : $("capWhy").textContent]; }, frontCorrection, get camView() { return camView; }, get bodyRatio() { return bodyRatio; }, recommend, buildFeedback, showReport, metrics, updateRep, updateHold, beginSet, refFor, setRecording: on => { recording = on ? { reps: [] } : null; }, finishRecording, get recording() { return recording; }, finishSet, closeSession, loadLog, startRoutine: id => { routine = { ...routineById(id), idx: 0 }; ex = exById(routine.items[0].ex); session = newSession(); setNo = 1; log = []; }, get routine() { return routine; }, get ex() { return ex.id; }, get state() { return { phase, repCount, holdTime, setNo, log, errStreak }; }, setEx: id => { ex = exById(id); }, setPhase: p => phase = p };
 
 try { window.__coach && window.__coach.faces(m => halmaeSVG(m, true)); } catch (e) {}
 </script>
