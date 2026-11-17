@@ -129,7 +129,7 @@
   .demo-skip{display:none;position:absolute;top:12px;right:12px;z-index:4;height:38px;padding:0 16px;border:0;border-radius:999px;background:rgba(255,255,255,.92);color:#16181D;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
   .cam.demo-on .demo-skip{display:block}
   .cam:not(.live) .hud-count{display:none}
-  .cam.learning video{transform:none!important} .cam.learning canvas{transform:none!important} /* 영상 파일은 거울처럼 뒤집지 않음 */
+  .cam.learning video{transform:none!important;object-fit:contain!important;background:#000} .cam.learning canvas{transform:none!important;object-fit:contain!important} /* 영상 파일은 거울처럼 뒤집지 않음 */
   .label-card{margin-top:12px;padding:14px;border-radius:18px;background:var(--surface)}
   .label-card[hidden]{display:none}
   .label-card > b{display:block;font-size:15px} .label-card p{margin:4px 0 10px;font-size:12.5px;color:var(--ink-2);line-height:1.5}
@@ -707,7 +707,7 @@
           <div class="field-note" id="dataNote">켜면 매 회 동작의 관절 각도와 위치(숫자)만 이 기기에 저장해요. 영상은 저장하지 않아요. 라벨링은 트레이너가 세트가 끝날 때마다 좋은 자세/나쁜 자세를 표시하는 기능이에요.</div>
           <div class="field-note"><b>전문가 영상</b>: 다른 화면(TV·노트북)에 트레이너의 정자세 영상을 틀고 아이패드 카메라로 비추면, 센 동작을 모두 ‘좋은 자세’로 저장해요. 라벨링을 직접 안 해도 돼요.</div>
           <div class="voice-row" style="margin-top:8px"><button class="btn" id="vidLearn" type="button" style="flex:1">영상 파일로 배우기</button><input type="file" id="vidFile" accept="video/*" multiple hidden></div>
-          <div class="field-note">아이패드에 저장된 운동 영상을 <b>여러 개 한꺼번에</b> 고르면, 지금 고른 운동으로 하나씩 차례로 자동 분석해서 ‘좋은 자세’ 데이터로 저장해요. 분석하는 동안 화면을 켜 두세요. 한 번에 한 종목 영상만 골라 주세요.</div>
+          <div class="field-note">아이패드에 저장된 운동 영상을 <b>여러 개 한꺼번에</b> 고르면, 지금 고른 운동으로 하나씩 차례로 자동 분석해서 ‘좋은 자세’ 데이터로 저장해요. 가로·세로·4K 등 영상 비율과 크기는 상관없어요. 사람이 작게 나와도 자동으로 확대해서 분석해요. 분석하는 동안 화면을 켜 두세요. 한 번에 한 종목 영상만 골라 주세요.</div>
           <div class="voice-row" style="margin-top:8px"><button class="btn" id="dataExport" type="button" style="flex:1">학습 데이터 내보내기</button><button class="btn btn-quiet" id="dataClear" type="button">지우기</button></div>
         </div>
         <div>
@@ -801,6 +801,7 @@ const MP_VER = "0.10.14";
 const MP_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VER}/vision_bundle.mjs`;
 const WASM_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VER}/wasm`;
 const MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
+const MODEL_FULL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task"; // 영상 학습용 정밀 모델
 
 // ===== 설정 (앉은 자세 화면과 같은 저장 공간을 써서 사투리·알림 방식이 이어짐) =====
 // 스쿼트 상체 숙임 허용치: 바르게 앉아도 상체는 35~50° 기울어지는 게 정상
@@ -1514,7 +1515,7 @@ function frontCorrection(w, lm, lean3d) {
     ratioBuf.push(ratio); if (ratioBuf.length > 120) ratioBuf.shift();
     if (ratioBuf.length >= 15) {
       const sorted = ratioBuf.slice().sort((x, y) => x - y); bodyRatio = sorted[Math.floor(sorted.length * 0.75)];
-      if (performance.now() - lastBodySave > 5000) { lastBodySave = performance.now(); try { localStorage.setItem(BODY_KEY, JSON.stringify({ ratio: bodyRatio })); } catch (e) {} }
+      if (!learnVid && performance.now() - lastBodySave > 5000) { lastBodySave = performance.now(); try { localStorage.setItem(BODY_KEY, JSON.stringify({ ratio: bodyRatio })); } catch (e) {} }
     }
   }
   if (!bodyRatio) return { lean: lean3d, leanFS: null };
@@ -2278,7 +2279,7 @@ function ghostPose(pts, e, theta) {
 function draw(lm, o = {}) {
   const dpr = window.devicePixelRatio || 1, Wd = overlay.width = overlay.clientWidth * dpr, H = overlay.height = overlay.clientHeight * dpr;
   ctx.clearRect(0, 0, Wd, H); if (!lm) return;
-  const vw = video.videoWidth || 640, vh = video.videoHeight || 480, sc = Math.max(Wd / vw, H / vh), ox = (Wd - vw * sc) / 2, oy = (H - vh * sc) / 2;
+  const vw = video.videoWidth || 640, vh = video.videoHeight || 480, sc = (learnVid ? Math.min : Math.max)(Wd / vw, H / vh), ox = (Wd - vw * sc) / 2, oy = (H - vh * sc) / 2;
   const pts = lm.map(p => [ox + p.x * vw * sc, oy + p.y * vh * sc]);
   const vis = i => (lm[i].visibility ?? 1) >= 0.3;
   pts.sm = [(pts[11][0] + pts[12][0]) / 2, (pts[11][1] + pts[12][1]) / 2]; pts.em = [(pts[7][0] + pts[8][0]) / 2, (pts[7][1] + pts[8][1]) / 2];
@@ -2377,6 +2378,7 @@ function handle(res, now) {
 let detectMs = 20;
 function loop() {
   if (!camOn || document.visibilityState === "hidden") return;
+  if (learnVid) { try { learnStep(); } catch (e) { console.error(e); } requestAnimationFrame(loop); return; }
   const now = performance.now();
   const busy = phase === "active" || phase === "countdown" || recording;
   const gap = phase === "demo" ? 1e9 : busy ? (detectMs > 45 ? 85 : 60) : 140; // 운동 중 약 16장/초, 쉬는 중·대기 중 7장/초
@@ -3244,6 +3246,80 @@ async function ensureLandmarker() {
   try { landmarker = await make("GPU"); } catch (e) { landmarker = await make("CPU"); }
   return landmarker;
 }
+// 영상 학습용 정밀 AI (조금 느리지만 더 정확). 못 불러오면 기본 AI로 대신함
+let landmarkerHQ = null, hqFailed = false;
+async function ensureLandmarkerHQ() {
+  await ensureLandmarker();
+  if (landmarkerHQ || hqFailed) return landmarkerHQ || landmarker;
+  try {
+    setBadge("정밀 AI 준비 중");
+    const { PoseLandmarker, FilesetResolver } = await import(MP_URL);
+    const vision = await FilesetResolver.forVisionTasks(WASM_URL);
+    const make = delegate => PoseLandmarker.createFromOptions(vision, { baseOptions: { modelAssetPath: MODEL_FULL_URL, delegate }, runningMode: "VIDEO", numPoses: 1,
+      minPoseDetectionConfidence: 0.4, minPosePresenceConfidence: 0.4, minTrackingConfidence: 0.5 });
+    try { landmarkerHQ = await make("GPU"); } catch (e) { landmarkerHQ = await make("CPU"); }
+  } catch (e) { hqFailed = true; landmarkerHQ = null; }
+  return landmarkerHQ || landmarker;
+}
+// ===== 영상 비율·크기에 상관없이 사람을 잘 찾기 =====
+// ① 영상 시간 기준으로 분석 → 느리게 재생해도 동작 속도 판정이 그대로
+// ② 사람이 작게 나오면(가로로 긴 영상 등) 사람 주변만 잘라서 크게 보고 분석
+// ③ 4K처럼 큰 영상은 줄여서 분석 → 빠르고 안정적
+// ④ 분석이 밀리면 재생 속도를 자동으로 늦춰서 동작을 빠뜨리지 않음
+const roiCv = document.createElement("canvas"), roiCtx = roiCv.getContext("2d");
+const FULL_ROI = { x: 0, y: 0, w: 1, h: 1 };
+function roiCands(vw, vh) {
+  const c = [FULL_ROI];
+  if (vw > vh * 1.15) { const w = vh / vw; for (const cx of [0.5, 0.3, 0.7, 0.15, 0.85]) c.push({ x: Math.max(0, Math.min(1 - w, cx - w / 2)), y: 0, w, h: 1 }); } // 가로 영상: 세로로 긴 사각형을 옮겨 가며 찾기
+  else if (vh > vw * 1.15) { const h = vw / vh; for (const cy of [0.5, 0.35, 0.65]) c.push({ x: 0, y: Math.max(0, Math.min(1 - h, cy - h / 2)), w: 1, h }); } // 세로 영상
+  c.push({ x: 0.15, y: 0.15, w: 0.7, h: 0.7 }); // 가운데 확대
+  return c;
+}
+function personBox(lm) {
+  let x0 = 1, y0 = 1, x1 = 0, y1 = 0, n = 0;
+  for (const p of lm) { if ((p.visibility ?? 1) < 0.3) continue; n++; x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y); }
+  return n >= 8 ? { x0: Math.max(0, x0), y0: Math.max(0, y0), x1: Math.min(1, x1), y1: Math.min(1, y1) } : null;
+}
+function roiAround(b, vw, vh) {
+  const bw = (b.x1 - b.x0) * vw, bh = (b.y1 - b.y0) * vh, side = Math.max(bw, bh) * 1.6; // 사람보다 넉넉하게
+  const w = Math.min(1, side / vw), h = Math.min(1, side / vh);
+  if (w * h > 0.8) return FULL_ROI; // 사람이 이미 크게 나오면 자를 필요 없음
+  const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+  return { x: Math.max(0, Math.min(1 - w, cx - w / 2)), y: Math.max(0, Math.min(1 - h, cy - h / 2)), w, h };
+}
+function learnStep() {
+  const L = learnVid, lk = L.lk || landmarker;
+  if (!lk || video.readyState < 2) return;
+  const vw = video.videoWidth, vh = video.videoHeight; if (!vw || !vh) return;
+  const vt = video.currentTime * 1000; if (vt <= L.lastVt) return; // 같은 장면은 다시 분석하지 않음
+  const stamp = L.base + vt; if (stamp <= L.lastStamp) return;
+  L.lastVt = vt; L.lastStamp = stamp;
+  if (L.candKey !== vw + "x" + vh) { L.candKey = vw + "x" + vh; L.cands = roiCands(vw, vh); L.ci = 0; L.roi = null; }
+  const r = L.roi || L.cands[L.ci];
+  const sw = r.w * vw, sh = r.h * vh, k = Math.min(1, 640 / Math.max(sw, sh)), cw = Math.max(2, Math.round(sw * k)), ch = Math.max(2, Math.round(sh * k));
+  if (roiCv.width !== cw || roiCv.height !== ch) { roiCv.width = cw; roiCv.height = ch; }
+  roiCtx.drawImage(video, r.x * vw, r.y * vh, sw, sh, 0, 0, cw, ch);
+  const t0 = performance.now(); let res = null;
+  try { res = lk.detectForVideo(roiCv, stamp); } catch (e) { console.error(e); }
+  L.dt = (L.dt || 30) * 0.85 + (performance.now() - t0) * 0.15;
+  let lm = res && res.landmarks && res.landmarks[0];
+  if (lm) lm = lm.map(p => ({ x: r.x + p.x * r.w, y: r.y + p.y * r.h, z: p.z * r.w, visibility: p.visibility, presence: p.presence })); // 잘라낸 좌표를 원래 영상 좌표로
+  const box = lm && personBox(lm);
+  if (box) {
+    L.miss = 0;
+    const R = L.roi, m = 0.03;
+    // 사람이 잘라낸 영역 가장자리에 닿을 때만 영역을 다시 잡음 (자주 바꾸면 추적이 흔들림)
+    if (!R || (R !== FULL_ROI && (box.x0 < R.x + m || box.x1 > R.x + R.w - m || box.y0 < R.y + m || box.y1 > R.y + R.h - m))) L.roi = roiAround(box, vw, vh);
+  } else {
+    L.miss = (L.miss || 0) + 1;
+    if (L.roi && L.miss > 15) { L.roi = null; L.ci = 0; }
+    else if (!L.roi && L.miss % 4 === 0) L.ci = (L.ci + 1) % L.cands.length;
+  }
+  handle(lm ? { landmarks: [lm], worldLandmarks: res.worldLandmarks } : null, stamp);
+  // 1초 영상당 15장 이상 분석되도록 재생 속도 자동 조절
+  const perSec = 1000 / Math.max(L.dt + 6, 17), rate = Math.max(0.35, Math.min(1, perSec / 15));
+  if (Math.abs(video.playbackRate - rate) > 0.08) { try { video.playbackRate = rate; } catch (e) {} }
+}
 // ===== 영상 파일로 배우기: 저장된 운동 영상 여러 개를 차례로 자동 분석해 '좋은 자세' 데이터로 저장 =====
 let learnVid = null;
 $("vidLearn").addEventListener("click", () => {
@@ -3256,8 +3332,8 @@ $("vidFile").addEventListener("change", async e => {
   closeSettings();
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
   camOn = false;
-  try { await ensureLandmarker(); } catch (er) { showError("AI 모델을 불러오지 못했어요. 인터넷 연결을 확인하고 다시 해 주세요."); return; }
-  learnVid = { files, i: -1, tok: 0, url: null, cur: null, n: 0, good: 0, vidGood: 0, done: 0, empty: 0, failed: 0, prevMode: settings.mode };
+  let lk; try { lk = await ensureLandmarkerHQ(); } catch (er) { showError("AI 모델을 불러오지 못했어요. 인터넷 연결을 확인하고 다시 해 주세요."); return; }
+  learnVid = { lk, myBody: bodyRatio, lastStamp: performance.now() + 1000, files, i: -1, tok: 0, url: null, cur: null, n: 0, good: 0, vidGood: 0, done: 0, empty: 0, failed: 0, prevMode: settings.mode };
   settings.mode = "screen"; // 분석 중엔 소리 끔
   video.muted = true; video.playsInline = true; video.loop = false; video.srcObject = null;
   $("camEmpty").style.display = "none"; document.querySelector(".cam").classList.add("live", "learning");
@@ -3284,19 +3360,21 @@ async function nextLearnVid(ok, tok) {
   const f = L.files[L.i]; L.cur = f.name; L.url = URL.createObjectURL(f); const myTok = L.tok;
   // 영상마다 사람·카메라가 다르니 몸 기준값과 동작 상태를 새로 시작
   repCount = 0; holdTime = 0; rep = null; sm = null; topPeak = null; ratioBuf = []; fsBuf = []; leanWin = []; liveBad = {}; liveCnt = {}; setSamples = [];
+  L.base = L.lastStamp + 1000; L.lastVt = -1; L.roi = null; L.ci = 0; L.miss = 0; L.candKey = ""; visibleAt = L.base; lostSince = 0; viewVotes = []; bodyRatio = null; // 영상 속 사람의 몸 비율은 새로 배움
   phase = "active"; renderHud();
   const tot = L.files.length;
   setBadge(`영상 분석 중 ${L.i + 1}/${tot} · ${ex.name}`, "good");
   $("learnStop").textContent = tot > 1 ? `영상 분석 멈추기 (${L.i + 1}/${tot})` : "영상 분석 멈추기";
   noteWhy(tot > 1 ? `${L.i + 1}번째 영상 분석 중 (전체 ${tot}개) · 지금까지 좋은 자세 ${L.good}회 저장` : `영상 속 ${ex.name} 동작을 분석하고 있어요. 끝까지 재생되면 자동으로 저장돼요`, "tip", 6000);
-  video.src = L.url;
+  video.src = L.url; video.playbackRate = 1;
   try { await video.play(); } catch (er) { if (er && er.name === "AbortError") return; if (learnVid === L) nextLearnVid(false, myTok); }
 }
 function finishLearnVid() {
   if (!learnVid) return;
   const L = learnVid; learnVid = null;
   camOn = false; phase = "idle"; settings.mode = L.prevMode; hideCap(); hideBig();
-  video.onended = null; video.onerror = null;
+  video.onended = null; video.onerror = null; try { video.playbackRate = 1; } catch (e) {}
+  bodyRatio = L.myBody; ratioBuf = []; fsBuf = []; viewVotes = []; // 내 몸 기준값으로 되돌림
   try { video.pause(); } catch (e) {} video.removeAttribute("src"); video.load(); if (L.url) URL.revokeObjectURL(L.url);
   try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch (e) {}
   document.querySelector(".cam").classList.remove("live", "learning"); $("camEmpty").style.display = "";
