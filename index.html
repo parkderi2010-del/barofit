@@ -1667,7 +1667,8 @@ function frameConf(lm) {
 const confLabel = c => c >= 0.65 ? "높음" : c >= 0.4 ? "보통" : "낮음";
 function visibleEnough(lm) {
   const v = i => (lm[i] && lm[i].visibility != null) ? lm[i].visibility : 0;
-  return ex.need.every(k => Math.max(v(L[k][0]), v(L[k][1])) > 0.5);
+  const th = learnVid ? 0.4 : 0.5; // 영상은 화질·조명이 제각각이라 조금 너그럽게
+  return ex.need.every(k => Math.max(v(L[k][0]), v(L[k][1])) > th);
 }
 // 판정 기준에 따라 "1회 인정" 각도를 조금 너그럽게/엄격하게
 function deepFor(e) {
@@ -2773,7 +2774,7 @@ const PROF_KEY = "barofit-profile";
 const profile = () => { try { return JSON.parse(localStorage.getItem(PROF_KEY) || "{}"); } catch (e) { return {}; } };
 function saveProfile(p) { try { localStorage.setItem(PROF_KEY, JSON.stringify(p)); } catch (e) {} }
 // 다리가 긴(키가 큰) 사람은 바르게 앉아도 상체가 더 숙여지는 게 정상 → 스쿼트 숙임 허용치 보정
-function heightAdj() { const h = +profile().height || 0; return h >= 185 ? 5 : h >= 178 ? 3 : h && h <= 158 ? -2 : 0; }
+function heightAdj() { if (learnVid) return 0; const h = +profile().height || 0; return h >= 185 ? 5 : h >= 178 ? 3 : h && h <= 158 ? -2 : 0; }
 function meText() {
   const p = profile(); if (!p.height && !p.weight) return "아직 입력하지 않았어요";
   return [p.height && `${p.height}cm`, p.weight && `${p.weight}kg`, { m: "남성", f: "여성" }[p.sex], { beg: "운동 처음", mid: "1년 미만", adv: "1년 이상" }[p.level]].filter(Boolean).join(" · ");
@@ -2858,7 +2859,7 @@ function saveKgHistory(e, sets, target) {
 // ===================== 판정 보정 (사용자 피드백으로 내 몸에 맞추기) =====================
 const TUNE_KEY = "barofit-tune", DIAG_KEY = "barofit-diag";
 const tunes = () => { try { return JSON.parse(localStorage.getItem(TUNE_KEY) || "{}"); } catch (e) { return {}; } };
-const tuneFor = id => tunes()[id] || {};
+const tuneFor = id => (learnVid ? {} : tunes()[id] || {}); // 영상 학습 중엔 내 몸 보정을 쓰지 않음
 function saveTune(id, t) { const all = tunes(); all[id] = t; try { localStorage.setItem(TUNE_KEY, JSON.stringify(all)); } catch (e) {} renderTuneNote(); }
 const tuneOff = (id, k) => !!(tuneFor(id).off || {})[k];
 let diagBuf = [];
@@ -3255,8 +3256,8 @@ async function ensureLandmarkerHQ() {
     setBadge("정밀 AI 준비 중");
     const { PoseLandmarker, FilesetResolver } = await import(MP_URL);
     const vision = await FilesetResolver.forVisionTasks(WASM_URL);
-    const make = delegate => PoseLandmarker.createFromOptions(vision, { baseOptions: { modelAssetPath: MODEL_FULL_URL, delegate }, runningMode: "VIDEO", numPoses: 1,
-      minPoseDetectionConfidence: 0.4, minPosePresenceConfidence: 0.4, minTrackingConfidence: 0.5 });
+    const make = delegate => PoseLandmarker.createFromOptions(vision, { baseOptions: { modelAssetPath: MODEL_FULL_URL, delegate }, runningMode: "VIDEO", numPoses: 3,
+      minPoseDetectionConfidence: 0.3, minPosePresenceConfidence: 0.3, minTrackingConfidence: 0.3 }); // 여러 명이 나와도 찾고, 그중 주인공(가장 크게 나온 사람)을 고름
     try { landmarkerHQ = await make("GPU"); } catch (e) { landmarkerHQ = await make("CPU"); }
   } catch (e) { hqFailed = true; landmarkerHQ = null; }
   return landmarkerHQ || landmarker;
@@ -3298,13 +3299,25 @@ function learnStep() {
   const r = L.roi || L.cands[L.ci];
   const sw = r.w * vw, sh = r.h * vh, k = Math.min(1, 640 / Math.max(sw, sh)), cw = Math.max(2, Math.round(sw * k)), ch = Math.max(2, Math.round(sh * k));
   if (roiCv.width !== cw || roiCv.height !== ch) { roiCv.width = cw; roiCv.height = ch; }
+  // 어두운 영상은 밝기·대비를 올려서 분석 (원본 영상은 그대로)
+  const dark = lumaNow < 85, flt = dark ? `brightness(${Math.min(1.9, 115 / Math.max(lumaNow, 25)).toFixed(2)}) contrast(1.15)` : "none";
+  try { if (roiCtx.filter !== flt) roiCtx.filter = flt; } catch (e) {}
   roiCtx.drawImage(video, r.x * vw, r.y * vh, sw, sh, 0, 0, cw, ch);
+  if (++L.lumaTick % 20 === 1) sampleLuma(1e12 + L.lumaTick * 2000);
   const t0 = performance.now(); let res = null;
   try { res = lk.detectForVideo(roiCv, stamp); } catch (e) { console.error(e); }
   L.dt = (L.dt || 30) * 0.85 + (performance.now() - t0) * 0.15;
-  let lm = res && res.landmarks && res.landmarks[0];
-  if (lm) lm = lm.map(p => ({ x: r.x + p.x * r.w, y: r.y + p.y * r.h, z: p.z * r.w, visibility: p.visibility, presence: p.presence })); // 잘라낸 좌표를 원래 영상 좌표로
-  const box = lm && personBox(lm);
+  // 잘라낸 좌표를 원래 영상 좌표로 바꾸고, 여러 명이면 주인공을 고름 (크게 나오고, 직전 위치와 가까운 사람)
+  let lm = null, wl = null, box = null, best = -1;
+  (res && res.landmarks || []).forEach((raw, i) => {
+    const m = raw.map(p => ({ x: r.x + p.x * r.w, y: r.y + p.y * r.h, z: p.z * r.w, visibility: p.visibility, presence: p.presence }));
+    const b = personBox(m); if (!b) return;
+    const area = (b.x1 - b.x0) * vw * (b.y1 - b.y0) * vh, cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+    const near = L.prevC ? Math.max(0.3, 1 - Math.hypot(cx - L.prevC[0], cy - L.prevC[1]) * 1.5) : 1;
+    const sc = area * near; if (sc > best) { best = sc; lm = m; wl = res.worldLandmarks && res.worldLandmarks[i]; box = b; }
+  });
+  if (box) L.prevC = [(box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2];
+  L.frames++; if (box) L.found++;
   if (box) {
     L.miss = 0;
     const R = L.roi, m = 0.03;
@@ -3315,7 +3328,14 @@ function learnStep() {
     if (L.roi && L.miss > 15) { L.roi = null; L.ci = 0; }
     else if (!L.roi && L.miss % 4 === 0) L.ci = (L.ci + 1) % L.cands.length;
   }
-  handle(lm ? { landmarks: [lm], worldLandmarks: res.worldLandmarks } : null, stamp);
+  handle(lm && wl ? { landmarks: [lm], worldLandmarks: [wl] } : null, stamp);
+  // 진행 상황: 몇 번째 영상인지, 사람을 얼마나 잘 찾고 있는지
+  if (stamp - (L.statAt || 0) > 400) {
+    L.statAt = stamp; const pct = L.frames ? Math.round(L.found / L.frames * 100) : 0;
+    const zoom = L.roi && L.roi !== FULL_ROI ? " · 확대" : !L.roi && L.ci ? " · 사람 찾는 중" : "";
+    L.stat = `영상 ${L.i + 1}/${L.files.length} · 사람 인식 ${pct}%${zoom}${video.playbackRate < 0.95 ? ` · ${video.playbackRate.toFixed(1)}배속` : ""}${dark ? " · 밝기 보정" : ""}`;
+  }
+  if (L.stat) setBadge(L.stat, L.frames > 20 && L.found / L.frames < 0.4 ? "bad" : "good");
   // 1초 영상당 15장 이상 분석되도록 재생 속도 자동 조절
   const perSec = 1000 / Math.max(L.dt + 6, 17), rate = Math.max(0.35, Math.min(1, perSec / 15));
   if (Math.abs(video.playbackRate - rate) > 0.08) { try { video.playbackRate = rate; } catch (e) {} }
@@ -3333,8 +3353,8 @@ $("vidFile").addEventListener("change", async e => {
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
   camOn = false;
   let lk; try { lk = await ensureLandmarkerHQ(); } catch (er) { showError("AI 모델을 불러오지 못했어요. 인터넷 연결을 확인하고 다시 해 주세요."); return; }
-  learnVid = { lk, myBody: bodyRatio, lastStamp: performance.now() + 1000, files, i: -1, tok: 0, url: null, cur: null, n: 0, good: 0, vidGood: 0, done: 0, empty: 0, failed: 0, prevMode: settings.mode };
-  settings.mode = "screen"; // 분석 중엔 소리 끔
+  learnVid = { lk, myBody: bodyRatio, myStrict: settings.strict, lowSee: 0, frames: 0, found: 0, lastStamp: performance.now() + 1000, files, i: -1, tok: 0, url: null, cur: null, n: 0, good: 0, vidGood: 0, done: 0, empty: 0, failed: 0, prevMode: settings.mode };
+  settings.mode = "screen"; settings.strict = "normal"; // 분석 중엔 소리 끄고, 판정 기준은 '보통'으로
   video.muted = true; video.playsInline = true; video.loop = false; video.srcObject = null;
   $("camEmpty").style.display = "none"; document.querySelector(".cam").classList.add("live", "learning");
   $("camBtn").hidden = true; $("goBtn").hidden = true; $("learnStop").hidden = false;
@@ -3350,7 +3370,7 @@ async function nextLearnVid(ok, tok) {
   if (tok !== undefined && tok !== L.tok) return; // 같은 영상에 대한 중복 신호(재생 실패 + 오류)는 한 번만 처리
   L.tok++; // 이 영상의 남은 신호는 모두 무시
   if (L.url) {
-    if (ok === false) L.failed++; else { L.done++; if (L.good === L.vidGood) L.empty++; }
+    if (ok === false) L.failed++; else { L.done++; if (L.good === L.vidGood) L.empty++; if (L.frames > 20 && L.found / L.frames < 0.4) L.lowSee++; }
     try { video.pause(); } catch (e) {} URL.revokeObjectURL(L.url); L.url = null;
   }
   L.vidGood = L.good; L.i++;
@@ -3360,6 +3380,7 @@ async function nextLearnVid(ok, tok) {
   const f = L.files[L.i]; L.cur = f.name; L.url = URL.createObjectURL(f); const myTok = L.tok;
   // 영상마다 사람·카메라가 다르니 몸 기준값과 동작 상태를 새로 시작
   repCount = 0; holdTime = 0; rep = null; sm = null; topPeak = null; ratioBuf = []; fsBuf = []; leanWin = []; liveBad = {}; liveCnt = {}; setSamples = [];
+  L.frames = 0; L.found = 0; L.prevC = null; L.lumaTick = 0; L.stat = ""; L.statAt = 0;
   L.base = L.lastStamp + 1000; L.lastVt = -1; L.roi = null; L.ci = 0; L.miss = 0; L.candKey = ""; visibleAt = L.base; lostSince = 0; viewVotes = []; bodyRatio = null; // 영상 속 사람의 몸 비율은 새로 배움
   phase = "active"; renderHud();
   const tot = L.files.length;
@@ -3372,9 +3393,9 @@ async function nextLearnVid(ok, tok) {
 function finishLearnVid() {
   if (!learnVid) return;
   const L = learnVid; learnVid = null;
-  camOn = false; phase = "idle"; settings.mode = L.prevMode; hideCap(); hideBig();
+  camOn = false; phase = "idle"; settings.mode = L.prevMode; settings.strict = L.myStrict; hideCap(); hideBig();
   video.onended = null; video.onerror = null; try { video.playbackRate = 1; } catch (e) {}
-  bodyRatio = L.myBody; ratioBuf = []; fsBuf = []; viewVotes = []; // 내 몸 기준값으로 되돌림
+  bodyRatio = L.myBody; ratioBuf = []; fsBuf = []; viewVotes = []; lastLuma = 0; lumaNow = 255; // 내 몸 기준값으로 되돌림
   try { video.pause(); } catch (e) {} video.removeAttribute("src"); video.load(); if (L.url) URL.revokeObjectURL(L.url);
   try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch (e) {}
   document.querySelector(".cam").classList.remove("live", "learning"); $("camEmpty").style.display = "";
@@ -3382,10 +3403,12 @@ function finishLearnVid() {
   flushDiag(); renderDataNote();
   const tot = L.files.length, stopped = L.done + L.failed < tot;
   let msg;
-  if (tot === 1) msg = L.good ? `영상에서 ${ex.name} ${L.good}회를 ‘좋은 자세’로 저장했어요` : L.failed ? "이 영상은 재생할 수 없어요. 다른 영상을 골라 주세요" : `영상에서 ${ex.name} 동작을 찾지 못했어요. 운동 종류와 촬영 방향을 확인해 주세요`;
+  if (tot === 1) msg = L.good ? `영상에서 ${ex.name} ${L.good}회를 ‘좋은 자세’로 저장했어요` : L.failed ? "이 영상은 재생할 수 없어요. 다른 영상을 골라 주세요"
+    : L.lowSee ? "영상 속 사람을 잘 찾지 못했어요. 몸 전체가 보이고 한 사람이 크게 나오는 영상을 골라 주세요" : `사람은 찾았지만 ${ex.name} 동작을 세지 못했어요. 운동 종류가 맞는지, 옆이나 대각선에서 찍은 영상인지 확인해 주세요`;
   else {
     msg = `영상 ${L.done}개에서 ${ex.name} 좋은 자세 ${L.good}회를 저장했어요`;
     if (L.empty) msg += ` · 동작을 못 찾은 영상 ${L.empty}개`;
+    if (L.lowSee) msg += ` (사람이 잘 안 보인 영상 ${L.lowSee}개)`;
     if (L.failed) msg += ` · 재생 안 된 영상 ${L.failed}개`;
     if (stopped) msg += ` · 중간에 멈춤 (${tot - L.done - L.failed}개 남음)`;
   }
