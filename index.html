@@ -2530,7 +2530,7 @@ function tryVoice() {
 }
 $("voiceTry").addEventListener("click", tryVoice);
 // 설정 시트 (아래에서 올라오는 창)
-function openSettings() { const bg = $("settingsSheet"); bg.hidden = false; requestAnimationFrame(() => bg.classList.add("open")); document.body.style.overflow = "hidden"; loadVoice(); }
+function openSettings() { const bg = $("settingsSheet"); bg.hidden = false; requestAnimationFrame(() => bg.classList.add("open")); document.body.style.overflow = "hidden"; loadVoice(); try { renderDataNoteNow(); } catch (e) {} }
 function closeSettings() { const bg = $("settingsSheet"); bg.classList.remove("open"); document.body.style.overflow = ""; setTimeout(() => { bg.hidden = true; }, 220); }
 $("gearBtn").addEventListener("click", openSettings);
 $("sheetClose").addEventListener("click", closeSettings);
@@ -3042,7 +3042,11 @@ function captureRep(e, r, info) {
   setSamples.push(smp);
   DB.put("reps", smp).then(renderDataNote).catch(() => {});
 }
-async function renderDataNote() {
+// 동작이 수천 개 쌓여도 느려지지 않게: 설정 창이 열려 있을 때만, 잠깐 모았다가 한 번에 셈
+let dataNoteTimer = null;
+function renderDataNote() { clearTimeout(dataNoteTimer); dataNoteTimer = setTimeout(renderDataNoteNow, 1200); }
+async function renderDataNoteNow() {
+  if ($("settingsSheet").hidden && dataNoteTimer) return;
   try {
     const all = await DB.all("reps"), lab = all.filter(x => x.label).length;
     $("dataNote").textContent = all.length ? `저장된 동작 ${all.length}개 · 라벨 ${lab}개 (${[...new Set(all.map(x => exById(x.ex).name))].slice(0, 4).join(", ")}${new Set(all.map(x => x.ex)).size > 4 ? " 등" : ""}). 이 기기 안에만 저장돼 있어요.` : "켜면 매 회 동작의 관절 각도와 위치(숫자)만 이 기기에 저장해요. 영상은 저장하지 않아요. 라벨링은 트레이너가 세트가 끝날 때마다 좋은 자세/나쁜 자세를 표시하는 기능이에요.";
@@ -3106,11 +3110,26 @@ function aiJudge(e, r) {
     return { good: out[names.indexOf("good")], errs };
   } catch (er) { return null; }
 }
+// 8비트로 줄여 저장한 가중치(q)를 다시 숫자 표로 풀기
+function prepModel(m) {
+  const out = { ...m, models: {} };
+  for (const k in m.models) {
+    const md = m.models[k];
+    out.models[k] = { ...md, layers: md.layers.map(L => {
+      if (L.W) return L;
+      const bin = atob(L.q), q = new Int8Array(bin.length); for (let i = 0; i < bin.length; i++) q[i] = (bin.charCodeAt(i) << 24) >> 24;
+      const [rows, cols] = L.shape, W = [];
+      for (let i = 0; i < rows; i++) { const r = new Float32Array(cols); for (let j = 0; j < cols; j++) r[j] = q[i * cols + j] * L.s; W.push(r); }
+      return { W, b: L.b, act: L.act };
+    }) };
+  }
+  return out;
+}
 function renderAiNote() {
   const ms = aiModel && aiModel.models ? Object.entries(aiModel.models) : [];
-  $("aiNote").textContent = ms.length ? `${ms.map(([k, m]) => `${exById(k).name}(시험 정확도 ${Math.round((m.metrics && m.metrics.acc || 0) * 100)}%)`).join(", ")} AI 모델이 적용돼 있어요.` : "아직 불러온 모델이 없어요. 학습 노트북으로 만든 모델 파일을 불러오면 그 운동은 AI도 함께 판정해요.";
+  $("aiNote").textContent = ms.length ? (ms.length > 4 ? `${ms.length}개 운동(${ms.slice(0, 3).map(([k]) => exById(k).name.replace(/ \(.*\)/, "")).join(", ")} 등)에 AI 모델이 적용돼 있어요.` : `${ms.map(([k, m]) => `${exById(k).name}(시험 정확도 ${Math.round((m.metrics && m.metrics.acc || 0) * 100)}%)`).join(", ")} AI 모델이 적용돼 있어요.`) : "아직 불러온 모델이 없어요. 학습 노트북으로 만든 모델 파일을 불러오면 그 운동은 AI도 함께 판정해요.";
 }
-DB.get("kv", "aiModel").then(m => { if (m) aiModel = m; renderAiNote(); }).catch(() => renderAiNote());
+DB.get("kv", "aiModel").then(m => { if (m) { try { aiModel = prepModel(m); } catch (e) {} } renderAiNote(); }).catch(() => renderAiNote());
 $("aiLoad").addEventListener("click", () => $("aiFile").click());
 $("aiFile").addEventListener("change", e => {
   const f = e.target.files[0]; if (!f) return;
@@ -3119,8 +3138,8 @@ $("aiFile").addEventListener("change", e => {
     try {
       const m = JSON.parse(rd.result);
       if (m.format !== "barofit-ai" || !m.models) throw new Error("형식");
-      for (const k in m.models) { const md = m.models[k]; if (!exById(k) || !md.layers || !md.mean) throw new Error(k); }
-      aiModel = m; DB.put("kv", m, "aiModel").catch(() => {}); renderAiNote(); showToast(`AI 모델을 불러왔어요 (${Object.keys(m.models).length}개 운동)`);
+      for (const k in m.models) { const md = m.models[k]; if (!exById(k) || !md.layers || !md.mean || !md.layers.every(L => L.W || L.q)) throw new Error(k); }
+      aiModel = prepModel(m); DB.put("kv", m, "aiModel").catch(() => {}); renderAiNote(); showToast(`AI 모델을 불러왔어요 (${Object.keys(m.models).length}개 운동)`);
     } catch (er) { showToast("바로핏 AI 모델 파일이 아니에요. 학습 노트북에서 만든 파일을 골라 주세요"); }
     e.target.value = "";
   };
@@ -3203,7 +3222,7 @@ $("endBtn").addEventListener("click", () => {
 $("againBtn").addEventListener("click", () => { $("report").hidden = true; phase = "idle"; $("goBtn").hidden = !camOn; $("camBtn").hidden = camOn; renderPicker(); });
 
 // 시험용 내부 접근
-window.__wk = { DB, captureRep, aiJudge, aiFeatures, aiForward, showLabelCard, get setSamples() { return setSamples; }, set aiModel(v) { aiModel = v; }, todayPart, frameConf, get confNow() { return confNow; }, set confNow(v) { confNow = v; }, kgAdvice, startKg, sessionKcal, applyFix, tuneFor, streakNow, renderWeek, profile, get curKg() { return curKg; }, squatLeanMax, runDemo, withDemo, demoProject, demoLerp3, drawDemo, DEMO_POSE, get demo() { return demo; }, ghostPose, ghostTheta, liveErrors, draw, get ghostInfo() { return ghostInfo; }, renderCap, get capText() { return [$("capMain").textContent, $("capSub").textContent, $("capWhy").hidden ? "" : $("capWhy").textContent]; }, frontCorrection, get camView() { return camView; }, get bodyRatio() { return bodyRatio; }, recommend, buildFeedback, showReport, metrics, updateRep, updateHold, beginSet, refFor, setRecording: on => { recording = on ? { reps: [] } : null; }, finishRecording, get recording() { return recording; }, finishSet, closeSession, loadLog, startRoutine: id => { routine = { ...routineById(id), idx: 0 }; ex = exById(routine.items[0].ex); session = newSession(); setNo = 1; log = []; }, get routine() { return routine; }, get ex() { return ex.id; }, get state() { return { phase, repCount, holdTime, setNo, log, errStreak }; }, setEx: id => { ex = exById(id); }, setPhase: p => phase = p };
+window.__wk = { EXERCISES, DB, captureRep, aiJudge, aiFeatures, aiForward, showLabelCard, get setSamples() { return setSamples; }, set aiModel(v) { aiModel = v && prepModel(v); }, todayPart, frameConf, get confNow() { return confNow; }, set confNow(v) { confNow = v; }, kgAdvice, startKg, sessionKcal, applyFix, tuneFor, streakNow, renderWeek, profile, get curKg() { return curKg; }, squatLeanMax, runDemo, withDemo, demoProject, demoLerp3, drawDemo, DEMO_POSE, get demo() { return demo; }, ghostPose, ghostTheta, liveErrors, draw, get ghostInfo() { return ghostInfo; }, renderCap, get capText() { return [$("capMain").textContent, $("capSub").textContent, $("capWhy").hidden ? "" : $("capWhy").textContent]; }, frontCorrection, get camView() { return camView; }, get bodyRatio() { return bodyRatio; }, recommend, buildFeedback, showReport, metrics, updateRep, updateHold, beginSet, refFor, setRecording: on => { recording = on ? { reps: [] } : null; }, finishRecording, get recording() { return recording; }, finishSet, closeSession, loadLog, startRoutine: id => { routine = { ...routineById(id), idx: 0 }; ex = exById(routine.items[0].ex); session = newSession(); setNo = 1; log = []; }, get routine() { return routine; }, get ex() { return ex.id; }, get state() { return { phase, repCount, holdTime, setNo, log, errStreak }; }, setEx: id => { ex = exById(id); }, setPhase: p => phase = p };
 
 try { window.__coach && window.__coach.faces(m => halmaeSVG(m, true)); } catch (e) {}
 </script>
