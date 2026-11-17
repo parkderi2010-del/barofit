@@ -129,14 +129,25 @@
   .demo-skip{display:none;position:absolute;top:12px;right:12px;z-index:4;height:38px;padding:0 16px;border:0;border-radius:999px;background:rgba(255,255,255,.92);color:#16181D;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
   .cam.demo-on .demo-skip{display:block}
   .cam:not(.live) .hud-count{display:none}
+  .cam.learning video{transform:none!important} .cam.learning canvas{transform:none!important} /* 영상 파일은 거울처럼 뒤집지 않음 */
   .label-card{margin-top:12px;padding:14px;border-radius:18px;background:var(--surface)}
   .label-card[hidden]{display:none}
-  .label-card b{display:block;font-size:15px} .label-card p{margin:4px 0 10px;font-size:12.5px;color:var(--ink-2);line-height:1.5}
+  .label-card > b{display:block;font-size:15px} .label-card p{margin:4px 0 10px;font-size:12.5px;color:var(--ink-2);line-height:1.5}
   .lchips{display:flex;flex-wrap:wrap;gap:6px}
   .lchip{min-width:56px;height:40px;border:0;border-radius:12px;font:inherit;font-size:14px;font-weight:800;cursor:pointer;background:var(--paper);color:var(--ink)}
   .lchip.good{background:#DDF7E8;color:#0D7A43} .lchip.bad{background:#FDE3E3;color:#B42318} .lchip.saved{box-shadow:inset 0 0 0 2px currentColor}
   html[data-theme="dark"] .lchip.good{background:#123A26;color:#7BE3A8} html[data-theme="dark"] .lchip.bad{background:#3A1717;color:#FFADAD}
   .lrow{display:flex;gap:8px;margin-top:10px} .lrow .btn{flex:1}
+  .lplay{display:block;width:100%;max-width:360px;height:auto;margin:0 auto 10px;border-radius:14px}
+  .lplay[hidden]{display:none}
+  .lrows{display:flex;flex-direction:column;gap:6px}
+  .lrow2{display:flex;align-items:center;gap:8px;padding:6px;border-radius:12px;background:var(--paper)}
+  .lrow2.playing{box-shadow:inset 0 0 0 2px var(--level,#3557F5)}
+  .lplaybtn{flex:none;width:36px;height:36px;border:0;border-radius:10px;background:var(--surface);color:var(--ink);font-size:14px;cursor:pointer}
+  .lname{flex:1;min-width:0} .lname b{display:block;font-size:14px} .lname small{display:block;font-size:11.5px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lseg{display:flex;gap:4px;flex:none}
+  .lseg button{height:36px;min-width:42px;padding:0 8px;border:0;border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px;font-weight:800;cursor:pointer}
+  .lseg button[data-l="good"].on{background:#17B26A;color:#fff} .lseg button[data-l="bad"].on{background:#F04438;color:#fff} .lseg button[data-l="skip"].on{background:#5B616B;color:#fff}
   .disclaimer{margin-top:4px;font-size:12px;opacity:.85} .disclaimer a{color:inherit;font-weight:700}
   .feel{margin-top:14px;padding:14px;border-radius:16px;background:var(--paper)} .feel b{display:block;font-size:15px;margin-bottom:10px}
   .feel-warn{margin:10px 0 0;padding:12px;border-radius:12px;background:#FDECEC;color:#8A1C1C;font-size:13.5px;font-weight:700;line-height:1.55}
@@ -594,6 +605,7 @@
       <button class="btn btn-primary" id="camBtn">카메라 켜기</button>
       <button class="btn btn-primary" id="goBtn" hidden>운동 시작</button>
       <button class="btn" id="skipDemo" hidden>시범 건너뛰기</button>
+      <button class="btn" id="learnStop" hidden>영상 분석 멈추기</button>
       <button class="btn" id="restAdd" hidden>+15초</button>
       <button class="btn" id="restSkip" hidden>쉬는 시간 건너뛰기</button>
       <button class="btn" id="endBtn" hidden>끝내고 리포트 보기</button>
@@ -691,8 +703,11 @@
         <div class="set-sec">바로핏 AI 학습</div>
         <div>
           <div class="field-label">학습 데이터 모으기</div>
-          <div class="seg" data-key="dataMode"><button data-val="off">끔</button><button data-val="collect">모으기</button><button data-val="label">모으기 + 라벨링</button></div>
+          <div class="seg" data-key="dataMode"><button data-val="off">끔</button><button data-val="collect">모으기</button><button data-val="label">라벨링</button><button data-val="expert">전문가 영상</button></div>
           <div class="field-note" id="dataNote">켜면 매 회 동작의 관절 각도와 위치(숫자)만 이 기기에 저장해요. 영상은 저장하지 않아요. 라벨링은 트레이너가 세트가 끝날 때마다 좋은 자세/나쁜 자세를 표시하는 기능이에요.</div>
+          <div class="field-note"><b>전문가 영상</b>: 다른 화면(TV·노트북)에 트레이너의 정자세 영상을 틀고 아이패드 카메라로 비추면, 센 동작을 모두 ‘좋은 자세’로 저장해요. 라벨링을 직접 안 해도 돼요.</div>
+          <div class="voice-row" style="margin-top:8px"><button class="btn" id="vidLearn" type="button" style="flex:1">영상 파일로 배우기</button><input type="file" id="vidFile" accept="video/*" multiple hidden></div>
+          <div class="field-note">아이패드에 저장된 운동 영상을 <b>여러 개 한꺼번에</b> 고르면, 지금 고른 운동으로 하나씩 차례로 자동 분석해서 ‘좋은 자세’ 데이터로 저장해요. 분석하는 동안 화면을 켜 두세요. 한 번에 한 종목 영상만 골라 주세요.</div>
           <div class="voice-row" style="margin-top:8px"><button class="btn" id="dataExport" type="button" style="flex:1">학습 데이터 내보내기</button><button class="btn btn-quiet" id="dataClear" type="button">지우기</button></div>
         </div>
         <div>
@@ -1426,9 +1441,9 @@ function sayLine(line) {
 }
 
 // ===== 평소 알림 (조용) =====
-function showToast(text) {
+function showToast(text, ms = 3000) {
   const t = $("toast"); t.textContent = text; t.classList.add("show");
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 3000);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), ms);
 }
 function edgeFlash(ms = 1000) {
   const e = $("camEdge"); e.classList.add("on"); clearTimeout(edgeTimer); edgeTimer = setTimeout(() => e.classList.remove("on"), ms);
@@ -1772,7 +1787,7 @@ function finishRecording() {
 
 // ===== 1회 판정 =====
 function updateRep(m, now) {
-  if (!recording && repCount >= goalReps()) return; // 목표 횟수를 채우면 다음 세트 전까지 더 세지 않음
+  if (!recording && !learnVid && repCount >= goalReps()) return; // 목표 횟수를 채우면 다음 세트 전까지 더 세지 않음
   const e = ex, v = m[e.metric], deep = deepFor(e);
   const inMove = e.dir === "down" ? v < e.start : v > e.start;
   const reached = e.dir === "down" ? v <= deep : v >= deep;
@@ -1872,7 +1887,7 @@ function updateRep(m, now) {
     else { lg.good++; goodStreak++; }
     renderHud();
     // 조교: 마지막 개수부터는 "한 개 더!"를 계속 외치고, 숨겨진 보너스(1~3개)가 끝나면 "수고했다"
-    if (isDrill() && !recording) {
+    if (isDrill() && !recording && !learnVid) {
       if (!bonusGiven && repCount >= tgt().reps) { bonusGiven = true; setBonus = 1 + Math.floor(Math.random() * 3); }
       const done = bonusGiven && repCount >= goalReps(), final = repCount >= tgt().reps - 1;
       let extra = "";
@@ -1893,7 +1908,7 @@ function updateRep(m, now) {
     else if ((left === 3 || left === 1) && !setBonus) { sayCount(repCount, null, isDrill() ? (left === 3 ? "세 개 남았다!" : "마지막!") : (left === 3 ? "세 개 남았어요" : "마지막 하나")); cheer(left === 3 ? "last3" : "last", 1600, true); }
     else if (goodStreak > 0 && goodStreak % 5 === 0) { sayCount(repCount, null, isDrill() ? "좋다!" : "좋아요"); cheer("good", 1600, true); }
     else sayCount(repCount);
-    if (repCount >= goalReps()) setTimeout(finishSet, 900);
+    if (repCount >= goalReps() && !learnVid) setTimeout(finishSet, 900);
   }
 }
 // ===== 버티기(플랭크) 판정 =====
@@ -3032,13 +3047,17 @@ const DB = (() => {
     del: (st, k) => run(st, "readwrite", o => o.delete(k)), clear: st => run(st, "readwrite", o => o.clear()), count: st => run(st, "readonly", o => o.count()) };
 })();
 function captureRep(e, r, info) {
-  if (settings.dataMode === "off" || !r.frames || r.frames.length < 4) return;
+  if ((settings.dataMode === "off" && !learnVid) || !r.frames || r.frames.length < 4) return;
   const feat = resampleSeq(r.frames.map(f => f[0])).map(row => row.map(x => r2(x, 10)));
   const pose = r.frames[0][1].length ? resampleSeq(r.frames.map(f => f[1])).map(row => row.map(x => r2(x, 1000))) : [];
   const p = profile();
   const smp = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, t: Date.now(), ex: e.id, view: camView || null, strict: settings.strict,
     conf: Math.round((info.conf || 0) * 100), dur: Math.round(info.dur || 0), counted: info.counted, reached: !!r.reached, ruleErrs: info.errs || [], score: info.score, ai: info.ai ?? null,
-    kg: usesKg(e) ? curKg : null, h: p.height ? Math.round(p.height / 5) * 5 : null, sex: p.sex || null, label: null, labelBy: null, feat, pose };
+    kg: usesKg(e) ? curKg : null, h: p.height ? Math.round(p.height / 5) * 5 : null, sex: p.sex || null, label: null, labelBy: null, vid: learnVid ? learnVid.cur : undefined, feat, pose };
+  if (settings.dataMode === "expert" || learnVid) { // 전문가 영상: 끝까지 센 동작 = 좋은 자세, 덜 움직인 동작은 학습에서 뺌
+    if (info.counted && r.reached) { smp.label = "good"; smp.labelBy = learnVid ? "expert-file" : "expert"; } else smp.labelBy = "skip";
+    if (learnVid) { learnVid.n++; if (smp.label === "good") learnVid.good++; }
+  }
   setSamples.push(smp);
   DB.put("reps", smp).then(renderDataNote).catch(() => {});
 }
@@ -3063,23 +3082,62 @@ $("dataExport").addEventListener("click", async () => {
 $("dataClear").addEventListener("click", async () => { if (!confirm("모은 학습 데이터를 모두 지울까요?")) return; try { await DB.clear("reps"); } catch (e) {} renderDataNote(); showToast("학습 데이터를 지웠어요"); });
 
 // ----- 트레이너 라벨링: 세트가 끝나면 회마다 좋은/나쁜 자세 표시 -----
+// 회마다 따로 라벨: 👍 좋은 자세 / 👎 나쁜 자세 / 모름(학습에서 빼기). ▶로 그 회 동작을 다시 보며 판단
 function showLabelCard() {
   if (settings.dataMode !== "label" || !setSamples.length) return;
-  const card = $("labelCard"), ruleGood = x => x.counted && !x.ruleErrs.length;
-  card.innerHTML = `<b>트레이너 라벨링 · 방금 세트 ${setSamples.length}회</b><p>처음 표시는 지금 규칙의 판정이에요. 틀린 회만 눌러서 바꾸고(누를 때마다 👍↔👎), 맞으면 ‘보이는 대로 저장’을 눌러 주세요.</p>
-    <div class="lchips">${setSamples.map((x, i) => `<button class="lchip ${ruleGood(x) ? "good" : "bad"}" data-i="${i}" type="button">${i + 1} ${ruleGood(x) ? "👍" : "👎"}</button>`).join("")}</div>
-    <div class="lrow"><button class="btn" id="labAllGood" type="button">전부 👍로 저장</button><button class="btn" id="labRule" type="button">보이는 대로 저장</button></div>`;
+  const card = $("labelCard"), ruleTxt = x => !x.counted ? `규칙: 안 셈 (${ERR_KO[x.ruleErrs[0]] || "덜 움직임"})` : x.ruleErrs.length ? `규칙: ${x.ruleErrs.map(k => ERR_KO[k] || k).join(", ")}` : "규칙: 좋은 자세";
+  card.innerHTML = `<b>트레이너 라벨링 · 방금 세트 ${setSamples.length}회</b>
+    <p>회마다 따로 골라요. 헷갈리면 ▶로 그 회 동작을 다시 보고, 그래도 확실하지 않으면 <b>모름</b>을 누르세요. 모름은 학습에서 빠져서 AI가 잘못 배우지 않아요.</p>
+    <canvas class="lplay" id="lplay" width="320" height="200" hidden></canvas>
+    <div class="lrows">${setSamples.map((x, i) => `<div class="lrow2" data-i="${i}">
+      <button class="lplaybtn" data-play="${i}" type="button" aria-label="${i + 1}회 다시 보기">▶</button>
+      <span class="lname"><b>${i + 1}회</b><small>${ruleTxt(x)} · ${(x.dur / 1000).toFixed(1)}초</small></span>
+      <span class="lseg"><button data-l="good" type="button" aria-label="좋은 자세">👍</button><button data-l="bad" type="button" aria-label="나쁜 자세">👎</button><button data-l="skip" type="button">모름</button></span></div>`).join("")}</div>
+    <div class="lrow"><button class="btn" id="labRule" type="button">나머지는 규칙 판정대로 저장</button></div>`;
   card.hidden = false;
 }
-function saveLabel(i, good) {
+function saveLabel(i, l) {
   const x = setSamples[i]; if (!x) return;
-  x.label = good ? "good" : "bad"; x.labelBy = "trainer"; DB.put("reps", x).then(renderDataNote).catch(() => {});
-  const b = document.querySelector(`#labelCard .lchip[data-i="${i}"]`); if (b) { b.className = `lchip ${good ? "good" : "bad"} saved`; b.textContent = `${i + 1} ${good ? "👍" : "👎"}`; }
+  if (l === "skip") { x.label = null; x.labelBy = "skip"; } else { x.label = l; x.labelBy = "trainer"; }
+  DB.put("reps", x).then(renderDataNote).catch(() => {});
+  const row = document.querySelector(`#labelCard .lrow2[data-i="${i}"]`);
+  if (row) row.querySelectorAll(".lseg button").forEach(b => b.classList.toggle("on", b.dataset.l === l));
+}
+let playTimer = null;
+function playRep(i) {
+  const x = setSamples[i], cv = $("lplay"); if (!x) return;
+  cancelAnimationFrame(playTimer); cv.hidden = false;
+  document.querySelectorAll("#labelCard .lrow2").forEach(r => r.classList.toggle("playing", +r.dataset.i === i));
+  const c = cv.getContext("2d"), W = cv.width, H = cv.height, t0 = performance.now(), dur = Math.max(1200, x.dur || 2000);
+  // 저장된 관절 위치: 머리(0) 어깨(1,2) 팔꿈치(3,4) 손목(5,6) 엉덩이(7,8) 무릎(9,10) 발목(11,12)
+  const bones = [[1, 2], [1, 3], [3, 5], [2, 4], [4, 6], [1, 7], [2, 8], [7, 8], [7, 9], [9, 11], [8, 10], [10, 12]];
+  const frame = () => {
+    const u = Math.min(1, (performance.now() - t0) / dur), k = Math.min(STEPS - 1, Math.floor(u * (STEPS - 1)));
+    c.clearRect(0, 0, W, H); c.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--paper") || "#F2F4F7"; c.fillRect(0, 0, W, H);
+    if (x.pose && x.pose.length) {
+      const p = x.pose[k], pt = j => [W / 2 - p[j * 3] * 170, H * 0.42 + p[j * 3 + 1] * 170];
+      c.lineCap = "round"; c.lineWidth = 6; c.strokeStyle = x.label === "bad" ? "#F04438" : "#3557F5";
+      bones.forEach(([a, b]) => { const A = pt(a), B = pt(b); c.beginPath(); c.moveTo(A[0], A[1]); c.lineTo(B[0], B[1]); c.stroke(); });
+      const hd = pt(0); c.fillStyle = c.strokeStyle; c.beginPath(); c.arc(hd[0], hd[1], 10, 0, 7); c.fill();
+    } else {
+      // 관절 위치가 없으면 주요 각도 그래프로 보여줌
+      const key = FEAT_KEYS.indexOf(ex.metric) >= 0 ? FEAT_KEYS.indexOf(ex.metric) : 0, vals = x.feat.map(r => r[key]), lo = Math.min(...vals) - 5, hi = Math.max(...vals) + 5;
+      c.strokeStyle = "#3557F5"; c.lineWidth = 3; c.beginPath(); vals.forEach((v, j) => { const X = 10 + j / (STEPS - 1) * (W - 20), Y = H - 10 - (v - lo) / (hi - lo) * (H - 20); j ? c.lineTo(X, Y) : c.moveTo(X, Y); }); c.stroke();
+      const X = 10 + k / (STEPS - 1) * (W - 20); c.fillStyle = "#F04438"; c.fillRect(X - 1, 0, 2, H);
+    }
+    c.fillStyle = "#5B616B"; c.font = "700 13px system-ui"; c.fillText(`${i + 1}회 다시 보기`, 10, 18);
+    if (u < 1) playTimer = requestAnimationFrame(frame);
+  };
+  frame();
 }
 $("labelCard").addEventListener("click", e => {
-  const c = e.target.closest(".lchip"); if (c) { saveLabel(+c.dataset.i, !c.classList.contains("good")); return; } // 누를 때마다 👍↔👎 바뀌고 바로 저장
-  if (e.target.closest("#labAllGood")) { setSamples.forEach((_, i) => saveLabel(i, true)); showToast("모두 좋은 자세로 저장했어요"); }
-  if (e.target.closest("#labRule")) { document.querySelectorAll("#labelCard .lchip").forEach(b => saveLabel(+b.dataset.i, b.classList.contains("good"))); showToast("라벨을 저장했어요"); }
+  const pb = e.target.closest("[data-play]"); if (pb) { playRep(+pb.dataset.play); return; }
+  const lb = e.target.closest(".lseg button"); if (lb) { saveLabel(+lb.closest(".lrow2").dataset.i, lb.dataset.l); return; }
+  if (e.target.closest("#labRule")) {
+    let n = 0;
+    setSamples.forEach((x, i) => { if (!x.labelBy) { saveLabel(i, x.counted && !x.ruleErrs.length ? "good" : "bad"); n++; } });
+    showToast(n ? `남은 ${n}회를 규칙 판정대로 저장했어요` : "모두 저장돼 있어요");
+  }
 });
 
 // ----- 내 AI 모델: 노트북에서 학습한 모델 파일을 불러와 이 기기 안에서 바로 판정 -----
@@ -3176,6 +3234,88 @@ window.addEventListener("pagehide", () => {
 });
 async function requestWakeLock() { try { if ("wakeLock" in navigator) wakeLock = await navigator.wakeLock.request("screen"); } catch (e) {} }
 document.addEventListener("visibilitychange", () => { if (camOn && document.visibilityState === "visible") requestWakeLock(); });
+async function ensureLandmarker() {
+  if (landmarker) return landmarker;
+  setBadge("AI 준비 중");
+  const { PoseLandmarker, FilesetResolver } = await import(MP_URL);
+  const vision = await FilesetResolver.forVisionTasks(WASM_URL);
+  const make = delegate => PoseLandmarker.createFromOptions(vision, { baseOptions: { modelAssetPath: MODEL_URL, delegate }, runningMode: "VIDEO", numPoses: 1,
+    minPoseDetectionConfidence: 0.5, minPosePresenceConfidence: 0.5, minTrackingConfidence: 0.5 });
+  try { landmarker = await make("GPU"); } catch (e) { landmarker = await make("CPU"); }
+  return landmarker;
+}
+// ===== 영상 파일로 배우기: 저장된 운동 영상 여러 개를 차례로 자동 분석해 '좋은 자세' 데이터로 저장 =====
+let learnVid = null;
+$("vidLearn").addEventListener("click", () => {
+  if (["active", "countdown", "rest", "demo"].includes(phase)) { showToast("운동이 끝난 뒤에 해 주세요"); return; }
+  if (ex.hold) { showToast("플랭크는 횟수가 없어서 영상 학습을 할 수 없어요. 다른 운동을 골라 주세요"); return; }
+  $("vidFile").click();
+});
+$("vidFile").addEventListener("change", async e => {
+  const files = [...e.target.files].filter(f => !f.type || f.type.startsWith("video/")); e.target.value = ""; if (!files.length) return;
+  closeSettings();
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  camOn = false;
+  try { await ensureLandmarker(); } catch (er) { showError("AI 모델을 불러오지 못했어요. 인터넷 연결을 확인하고 다시 해 주세요."); return; }
+  learnVid = { files, i: -1, tok: 0, url: null, cur: null, n: 0, good: 0, vidGood: 0, done: 0, empty: 0, failed: 0, prevMode: settings.mode };
+  settings.mode = "screen"; // 분석 중엔 소리 끔
+  video.muted = true; video.playsInline = true; video.loop = false; video.srcObject = null;
+  $("camEmpty").style.display = "none"; document.querySelector(".cam").classList.add("live", "learning");
+  $("camBtn").hidden = true; $("goBtn").hidden = true; $("learnStop").hidden = false;
+  log = []; setNo = 1; requestWakeLock();
+  video.onended = () => { if (learnVid) nextLearnVid(true, learnVid.tok); };
+  video.onerror = () => { if (learnVid && learnVid.url) nextLearnVid(false, learnVid.tok); };
+  camOn = true; requestAnimationFrame(loop);
+  nextLearnVid(null);
+});
+// 영상 한 개가 끝나면 결과를 기록하고 다음 영상으로 (ok: true=끝까지 재생, false=재생 실패, null=첫 영상)
+async function nextLearnVid(ok, tok) {
+  const L = learnVid; if (!L) return;
+  if (tok !== undefined && tok !== L.tok) return; // 같은 영상에 대한 중복 신호(재생 실패 + 오류)는 한 번만 처리
+  L.tok++; // 이 영상의 남은 신호는 모두 무시
+  if (L.url) {
+    if (ok === false) L.failed++; else { L.done++; if (L.good === L.vidGood) L.empty++; }
+    try { video.pause(); } catch (e) {} URL.revokeObjectURL(L.url); L.url = null;
+  }
+  L.vidGood = L.good; L.i++;
+  if (L.i >= L.files.length) { finishLearnVid(); return; }
+  if (ok === false) await new Promise(r => setTimeout(r, 200)); // 재생 실패한 영상의 남은 신호가 지나가도록 잠깐 쉼
+  if (learnVid !== L) return;
+  const f = L.files[L.i]; L.cur = f.name; L.url = URL.createObjectURL(f); const myTok = L.tok;
+  // 영상마다 사람·카메라가 다르니 몸 기준값과 동작 상태를 새로 시작
+  repCount = 0; holdTime = 0; rep = null; sm = null; topPeak = null; ratioBuf = []; fsBuf = []; leanWin = []; liveBad = {}; liveCnt = {}; setSamples = [];
+  phase = "active"; renderHud();
+  const tot = L.files.length;
+  setBadge(`영상 분석 중 ${L.i + 1}/${tot} · ${ex.name}`, "good");
+  $("learnStop").textContent = tot > 1 ? `영상 분석 멈추기 (${L.i + 1}/${tot})` : "영상 분석 멈추기";
+  noteWhy(tot > 1 ? `${L.i + 1}번째 영상 분석 중 (전체 ${tot}개) · 지금까지 좋은 자세 ${L.good}회 저장` : `영상 속 ${ex.name} 동작을 분석하고 있어요. 끝까지 재생되면 자동으로 저장돼요`, "tip", 6000);
+  video.src = L.url;
+  try { await video.play(); } catch (er) { if (er && er.name === "AbortError") return; if (learnVid === L) nextLearnVid(false, myTok); }
+}
+function finishLearnVid() {
+  if (!learnVid) return;
+  const L = learnVid; learnVid = null;
+  camOn = false; phase = "idle"; settings.mode = L.prevMode; hideCap(); hideBig();
+  video.onended = null; video.onerror = null;
+  try { video.pause(); } catch (e) {} video.removeAttribute("src"); video.load(); if (L.url) URL.revokeObjectURL(L.url);
+  try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch (e) {}
+  document.querySelector(".cam").classList.remove("live", "learning"); $("camEmpty").style.display = "";
+  $("learnStop").hidden = true; $("learnStop").textContent = "영상 분석 멈추기"; $("camBtn").hidden = false; $("camBtn").disabled = false; setBadge("대기 중");
+  flushDiag(); renderDataNote();
+  const tot = L.files.length, stopped = L.done + L.failed < tot;
+  let msg;
+  if (tot === 1) msg = L.good ? `영상에서 ${ex.name} ${L.good}회를 ‘좋은 자세’로 저장했어요` : L.failed ? "이 영상은 재생할 수 없어요. 다른 영상을 골라 주세요" : `영상에서 ${ex.name} 동작을 찾지 못했어요. 운동 종류와 촬영 방향을 확인해 주세요`;
+  else {
+    msg = `영상 ${L.done}개에서 ${ex.name} 좋은 자세 ${L.good}회를 저장했어요`;
+    if (L.empty) msg += ` · 동작을 못 찾은 영상 ${L.empty}개`;
+    if (L.failed) msg += ` · 재생 안 된 영상 ${L.failed}개`;
+    if (stopped) msg += ` · 중간에 멈춤 (${tot - L.done - L.failed}개 남음)`;
+  }
+  showToast(msg, tot > 1 ? 9000 : 4000);
+}
+// 화면이 꺼졌다 켜지면 영상 분석 이어서 하기
+document.addEventListener("visibilitychange", () => { if (learnVid && document.visibilityState === "visible" && video.paused && !video.ended && learnVid.url) { video.play().catch(() => {}); } });
+$("learnStop").addEventListener("click", finishLearnVid);
 $("camBtn").addEventListener("click", async () => {
   unlockAudio(); $("errorBox").style.display = "none";
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { showError("이 화면에서는 카메라를 쓸 수 없어요. <b>https:// 주소를 사파리나 크롬에서 직접</b> 열어주세요."); return; }
@@ -3186,14 +3326,7 @@ $("camBtn").addEventListener("click", async () => {
     video.srcObject = stream; await video.play(); $("camEmpty").style.display = "none"; document.querySelector(".cam").classList.add("live");
   } catch (e) { $("camBtn").disabled = false; setBadge("대기 중"); showError(camErrorText(e)); return; }
   watchTrack();
-  try {
-    setBadge("AI 준비 중");
-    const { PoseLandmarker, FilesetResolver } = await import(MP_URL);
-    const vision = await FilesetResolver.forVisionTasks(WASM_URL);
-    const make = delegate => PoseLandmarker.createFromOptions(vision, { baseOptions: { modelAssetPath: MODEL_URL, delegate }, runningMode: "VIDEO", numPoses: 1,
-      minPoseDetectionConfidence: 0.5, minPosePresenceConfidence: 0.5, minTrackingConfidence: 0.5 });
-    try { landmarker = await make("GPU"); } catch (e) { landmarker = await make("CPU"); }
-  } catch (e) { setBadge("오류", "bad"); $("camBtn").disabled = false; showError("AI 모델을 불러오지 못했어요. 처음 한 번은 인터넷 연결이 필요해요. 와이파이나 데이터를 확인한 뒤 <b>카메라 켜기</b>를 다시 눌러 주세요.<br><small>" + (e && e.message ? e.message : e) + "</small>"); return; }
+  try { await ensureLandmarker(); } catch (e) { setBadge("오류", "bad"); $("camBtn").disabled = false; showError("AI 모델을 불러오지 못했어요. 처음 한 번은 인터넷 연결이 필요해요. 와이파이나 데이터를 확인한 뒤 <b>카메라 켜기</b>를 다시 눌러 주세요.<br><small>" + (e && e.message ? e.message : e) + "</small>"); return; }
   camOn = true; requestWakeLock();
   $("camBtn").hidden = true; $("goBtn").hidden = false;
   requestAnimationFrame(loop);
@@ -3222,7 +3355,7 @@ $("endBtn").addEventListener("click", () => {
 $("againBtn").addEventListener("click", () => { $("report").hidden = true; phase = "idle"; $("goBtn").hidden = !camOn; $("camBtn").hidden = camOn; renderPicker(); });
 
 // 시험용 내부 접근
-window.__wk = { EXERCISES, DB, captureRep, aiJudge, aiFeatures, aiForward, showLabelCard, get setSamples() { return setSamples; }, set aiModel(v) { aiModel = v && prepModel(v); }, todayPart, frameConf, get confNow() { return confNow; }, set confNow(v) { confNow = v; }, kgAdvice, startKg, sessionKcal, applyFix, tuneFor, streakNow, renderWeek, profile, get curKg() { return curKg; }, squatLeanMax, runDemo, withDemo, demoProject, demoLerp3, drawDemo, DEMO_POSE, get demo() { return demo; }, ghostPose, ghostTheta, liveErrors, draw, get ghostInfo() { return ghostInfo; }, renderCap, get capText() { return [$("capMain").textContent, $("capSub").textContent, $("capWhy").hidden ? "" : $("capWhy").textContent]; }, frontCorrection, get camView() { return camView; }, get bodyRatio() { return bodyRatio; }, recommend, buildFeedback, showReport, metrics, updateRep, updateHold, beginSet, refFor, setRecording: on => { recording = on ? { reps: [] } : null; }, finishRecording, get recording() { return recording; }, finishSet, closeSession, loadLog, startRoutine: id => { routine = { ...routineById(id), idx: 0 }; ex = exById(routine.items[0].ex); session = newSession(); setNo = 1; log = []; }, get routine() { return routine; }, get ex() { return ex.id; }, get state() { return { phase, repCount, holdTime, setNo, log, errStreak }; }, setEx: id => { ex = exById(id); }, setPhase: p => phase = p };
+window.__wk = { EXERCISES, DB, captureRep, aiJudge, aiFeatures, aiForward, showLabelCard, get setSamples() { return setSamples; }, get learnVid() { return learnVid; }, nextLearnVid, finishLearnVid, set aiModel(v) { aiModel = v && prepModel(v); }, todayPart, frameConf, get confNow() { return confNow; }, set confNow(v) { confNow = v; }, kgAdvice, startKg, sessionKcal, applyFix, tuneFor, streakNow, renderWeek, profile, get curKg() { return curKg; }, squatLeanMax, runDemo, withDemo, demoProject, demoLerp3, drawDemo, DEMO_POSE, get demo() { return demo; }, ghostPose, ghostTheta, liveErrors, draw, get ghostInfo() { return ghostInfo; }, renderCap, get capText() { return [$("capMain").textContent, $("capSub").textContent, $("capWhy").hidden ? "" : $("capWhy").textContent]; }, frontCorrection, get camView() { return camView; }, get bodyRatio() { return bodyRatio; }, recommend, buildFeedback, showReport, metrics, updateRep, updateHold, beginSet, refFor, setRecording: on => { recording = on ? { reps: [] } : null; }, finishRecording, get recording() { return recording; }, finishSet, closeSession, loadLog, startRoutine: id => { routine = { ...routineById(id), idx: 0 }; ex = exById(routine.items[0].ex); session = newSession(); setNo = 1; log = []; }, get routine() { return routine; }, get ex() { return ex.id; }, get state() { return { phase, repCount, holdTime, setNo, log, errStreak }; }, setEx: id => { ex = exById(id); }, setPhase: p => phase = p };
 
 try { window.__coach && window.__coach.faces(m => halmaeSVG(m, true)); } catch (e) {}
 </script>
